@@ -4,7 +4,10 @@
  * navigations go to the network first, everything else is served from cache
  * while a fresh copy is fetched in the background.
  */
-const CACHE = "sunny-town-v1";
+// Bump whenever the app shell or playback architecture changes. This release
+// replaces browser speech with bundled MP3 clips, so retaining v1 would leave
+// an installed iPhone running the silent JavaScript indefinitely.
+const CACHE = "sunny-town-v2";
 const APP_SHELL = ["/", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", (event) => {

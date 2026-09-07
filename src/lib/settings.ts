@@ -1,7 +1,8 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { setMuted, setSpeechRate } from "@/lib/audio";
+import { setMuted } from "@/lib/audio";
+import { setSpeechRate } from "@/lib/speech";
 
 export type Settings = {
   muted: boolean;
@@ -26,7 +27,7 @@ const listeners = new Set<() => void>();
 
 function apply(settings: Settings) {
   setMuted(settings.muted);
-  setSpeechRate(settings.slowVoice ? 0.6 : 0.78);
+  setSpeechRate(settings.slowVoice ? 0.82 : 1);
 }
 
 function emit() {

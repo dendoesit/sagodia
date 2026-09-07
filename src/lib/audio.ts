@@ -1,17 +1,25 @@
-/**
- * Audio for a pre-reader game: spoken English words plus synthesized sound
- * effects. Everything is generated at runtime so the app ships no media files
- * and works offline once installed.
- *
- * iOS only allows audio and speech that starts inside a user gesture, so
- * `unlockAudio()` must be called from the first tap (see StartGate).
- */
+"use client";
+
+import {
+  initSpeech,
+  setSpeechMuted,
+  unlockSpeech,
+} from "@/lib/speech";
+
+export {
+  isSpeaking,
+  isSpeechBusy,
+  speak,
+  speakExclusive,
+  speakSequence,
+  speakTapped,
+  stopSpeaking,
+  subscribeSpeechBusy,
+  type SpeakOptions,
+} from "@/lib/speech";
 
 let audioCtx: AudioContext | null = null;
-let voices: SpeechSynthesisVoice[] = [];
 let muted = false;
-/** Slower than natural speech: single words have to be copyable by a toddler. */
-let speechRate = 0.78;
 let unlocked = false;
 
 type WebkitWindow = Window & { webkitAudioContext?: typeof AudioContext };
@@ -19,47 +27,29 @@ type WebkitWindow = Window & { webkitAudioContext?: typeof AudioContext };
 function getCtx(): AudioContext | null {
   if (typeof window === "undefined") return null;
   if (!audioCtx) {
-    const Ctor =
+    const Constructor =
       window.AudioContext ?? (window as WebkitWindow).webkitAudioContext;
-    if (!Ctor) return null;
-    audioCtx = new Ctor();
+    if (!Constructor) return null;
+    audioCtx = new Constructor();
   }
   if (audioCtx.state === "suspended") void audioCtx.resume();
   return audioCtx;
 }
 
-function hasSpeech(): boolean {
-  return typeof window !== "undefined" && "speechSynthesis" in window;
-}
-
-function refreshVoices() {
-  if (!hasSpeech()) return;
-  voices = window.speechSynthesis.getVoices();
-}
-
 export function initAudio() {
-  if (!hasSpeech()) return;
-  refreshVoices();
-  window.speechSynthesis.addEventListener("voiceschanged", refreshVoices);
+  initSpeech();
 }
 
-/**
- * Must run inside a real user gesture, once per session.
- *
- * Deliberately does *not* queue a silent primer utterance. iOS only honours
- * speech that starts inside the tap that asked for it, and a primer would
- * leave the synthesiser "pending", which pushes the first real phrase onto
- * the interrupt path and out of the gesture — so nothing is ever heard.
- */
+/** Unlock Web Audio and the reusable speech player in the first real tap. */
 export function unlockAudio() {
-  const ctx = getCtx();
-  if (ctx) {
-    const source = ctx.createBufferSource();
-    source.buffer = ctx.createBuffer(1, 1, 22050);
-    source.connect(ctx.destination);
+  const context = getCtx();
+  if (context) {
+    const source = context.createBufferSource();
+    source.buffer = context.createBuffer(1, 1, 22050);
+    source.connect(context.destination);
     source.start(0);
   }
-  if (hasSpeech()) refreshVoices();
+  unlockSpeech();
   unlocked = true;
 }
 
@@ -72,259 +62,13 @@ export function getAudioContext(): AudioContext | null {
   return getCtx();
 }
 
-export function isSpeaking(): boolean {
-  return hasSpeech() && window.speechSynthesis.speaking;
-}
-
 export function setMuted(value: boolean) {
   muted = value;
-  if (value && hasSpeech()) window.speechSynthesis.cancel();
-}
-
-export function setSpeechRate(rate: number) {
-  speechRate = rate;
-}
-
-/**
- * Warm female English voices, best first. A three-year-old copies the voice
- * they hear, so this is the accent they will end up with.
- */
-const PREFERRED_VOICES = [
-  "Samantha",
-  "Ava",
-  "Allison",
-  "Susan",
-  "Karen",
-  "Moira",
-  "Fiona",
-  "Google US English",
-  "Microsoft Aria",
-  "Microsoft Jenny",
-  "Microsoft Michelle",
-  "Microsoft Zira",
-];
-
-/** Voices that read like a screen reader rather than a person. */
-const AVOID_VOICES = ["Albert", "Bad News", "Bahh", "Bells", "Boing", "Bubbles",
-  "Cellos", "Deranged", "Good News", "Jester", "Organ", "Superstar", "Trinoids",
-  "Whisper", "Wobble", "Zarvox", "Eddy", "Flo", "Grandma", "Grandpa", "Reed",
-  "Rocko", "Sandy", "Shelley", "Junior", "Ralph", "Fred"];
-
-function pickVoice(): SpeechSynthesisVoice | null {
-  const english = voices.filter((v) =>
-    v.lang.replace("_", "-").toLowerCase().startsWith("en"),
-  );
-  if (english.length === 0) return null;
-  for (const name of PREFERRED_VOICES) {
-    const match = english.find((v) => v.name.includes(name));
-    if (match) return match;
-  }
-  const usable = english.filter(
-    (v) => !AVOID_VOICES.some((name) => v.name.includes(name)),
-  );
-  const pool = usable.length > 0 ? usable : english;
-  return pool.find((v) => v.lang.toLowerCase().startsWith("en-us")) ?? pool[0];
-}
-
-export type SpeakOptions = {
-  /** Cut off whatever is currently being said. Default true. */
-  interrupt?: boolean;
-  /** Multiplier applied on top of the global rate. */
-  rate?: number;
-  pitch?: number;
-  delay?: number;
-  onEnd?: () => void;
-};
-
-let queueTimer: number | undefined;
-let busy = false;
-let busySince = 0;
-let busyTimer: number | undefined;
-const busyListeners = new Set<() => void>();
-
-function setBusy(value: boolean) {
-  if (busy === value) return;
-  busy = value;
-  if (value) busySince = Date.now();
-  busyListeners.forEach((listener) => listener());
-}
-
-/**
- * A wedged `busy` flag would silence the whole app, since every tap asks
- * permission before speaking. So the flag is only believed while the
- * synthesiser agrees something is actually happening.
- */
-function busyIsStale(): boolean {
-  if (!busy) return false;
-  const age = Date.now() - busySince;
-  if (!hasSpeech()) return age > 600;
-  const synth = window.speechSynthesis;
-  if (synth.speaking || synth.pending) return false;
-  return age > 900;
-}
-
-/** True while a phrase is still being spoken. */
-export function isSpeechBusy() {
-  return busy && !busyIsStale();
-}
-
-export function subscribeSpeechBusy(listener: () => void) {
-  busyListeners.add(listener);
-  return () => {
-    busyListeners.delete(listener);
-  };
-}
-
-/** Rough upper bound on how long a phrase takes, used as a stuck-speech escape. */
-function estimateMs(parts: string[], rate: number) {
-  const characters = parts.join(" ").length;
-  return Math.min(9000, Math.max(700, (characters * 80) / Math.max(0.4, speechRate * rate)));
-}
-
-function buildUtterance(text: string, rate: number, pitch: number) {
-  const utterance = new SpeechSynthesisUtterance(text);
-  const voice = pickVoice();
-  if (voice) utterance.voice = voice;
-  utterance.lang = voice?.lang ?? "en-US";
-  utterance.rate = Math.max(0.4, Math.min(1.4, speechRate * rate));
-  utterance.pitch = pitch;
-  utterance.volume = 1;
-  return utterance;
-}
-
-/**
- * Speaks one or more phrases as a single batch.
- *
- * Two browser quirks are worked around here, and both show up as the app
- * silently saying nothing — which, in an app a pre-reader plays by ear, is
- * the same as the app being broken:
- *
- *  - Chrome discards utterances queued in the same tick as `cancel()`, so an
- *    interrupting phrase waits a beat for the cancel to settle.
- *  - Speech synthesis can wedge in a paused state; if nothing has started
- *    shortly after queueing, the batch is queued once more.
- */
-function speakBatch(parts: string[], options: SpeakOptions = {}) {
-  const { interrupt = true, rate = 1, pitch = 1.08, delay = 0, onEnd } = options;
-  if (muted || !hasSpeech() || parts.length === 0) {
-    // Still hold the lock briefly, so muted play is not a tap free-for-all.
-    setBusy(true);
-    window.clearTimeout(busyTimer);
-    busyTimer = window.setTimeout(() => setBusy(false), 450);
-    if (onEnd) window.setTimeout(onEnd, 300);
-    return;
-  }
-
-  const synth = window.speechSynthesis;
-  let started = false;
-
-  const release = () => {
-    window.clearTimeout(busyTimer);
-    setBusy(false);
-  };
-
-  setBusy(true);
-  window.clearTimeout(busyTimer);
-  busyTimer = window.setTimeout(release, estimateMs(parts, rate) + 1500);
-
-  const enqueue = () => {
-    if (muted) return;
-    if (synth.paused) synth.resume();
-    parts.forEach((part, index) => {
-      const utterance = buildUtterance(part, rate, pitch);
-      utterance.onstart = () => {
-        started = true;
-      };
-      if (index === parts.length - 1) {
-        utterance.onend = () => {
-          started = true;
-          release();
-          onEnd?.();
-        };
-        utterance.onerror = () => {
-          release();
-          onEnd?.();
-        };
-      }
-      synth.speak(utterance);
-    });
-  };
-
-  const fire = () => {
-    enqueue();
-    window.setTimeout(() => {
-      if (!started && !muted && !synth.speaking && !synth.pending) enqueue();
-    }, 320);
-  };
-
-  window.clearTimeout(queueTimer);
-  const active = synth.speaking || synth.pending;
-  if (interrupt && active) {
-    synth.cancel();
-    queueTimer = window.setTimeout(fire, Math.max(60, delay));
-  } else if (delay > 0) {
-    queueTimer = window.setTimeout(fire, delay);
-  } else {
-    // Synchronous on purpose. There is nothing to interrupt, and iOS only
-    // speaks phrases that start inside the tap that asked for them — going
-    // through a timer here is what made the app fall silent on iPhone.
-    fire();
-  }
-}
-
-export function speak(text: string, options: SpeakOptions = {}) {
-  speakBatch([text], options);
-}
-
-/** Say several short phrases back to back, e.g. ["Cow", "Moo"]. */
-export function speakSequence(parts: string[], options: SpeakOptions = {}) {
-  speakBatch(parts, options);
-}
-
-/**
- * Speaks only if nothing is being said already, and reports whether it took.
- *
- * This is the debounce for small hands: a three-year-old taps far faster than
- * a sentence takes to say, and without this every tap cut the previous word
- * off mid-syllable, so they never actually heard one.
- */
-export function speakExclusive(parts: string[], options: SpeakOptions = {}): boolean {
-  if (isSpeechBusy()) return false;
-  speakBatch(parts, options);
-  return true;
-}
-
-let lastTapped = "";
-
-/**
- * Says the name of a thing the child just tapped.
- *
- * Tapping a *different* thing interrupts whatever is being said, because the
- * child has moved on and wants to hear this one — a tap that produces silence
- * teaches nothing. Tapping the *same* thing again while it is still talking is
- * ignored, so a repeated tap cannot stutter the word it is already saying.
- */
-export function speakTapped(
-  key: string,
-  parts: string[],
-  options: SpeakOptions = {},
-): boolean {
-  if (key === lastTapped && isSpeechBusy()) return false;
-  lastTapped = key;
-  speakBatch(parts, options);
-  return true;
-}
-
-export function stopSpeaking() {
-  lastTapped = "";
-  window.clearTimeout(queueTimer);
-  window.clearTimeout(busyTimer);
-  setBusy(false);
-  if (hasSpeech()) window.speechSynthesis.cancel();
+  setSpeechMuted(value);
 }
 
 function tone(
-  freq: number,
+  frequency: number,
   startOffset: number,
   duration: number,
   {
@@ -333,42 +77,50 @@ function tone(
     sweepTo,
   }: { type?: OscillatorType; gain?: number; sweepTo?: number } = {},
 ) {
-  const ctx = getCtx();
-  if (!ctx || muted) return;
-  const t0 = ctx.currentTime + startOffset;
-  const osc = ctx.createOscillator();
-  const amp = ctx.createGain();
-  osc.type = type;
-  osc.frequency.setValueAtTime(freq, t0);
-  if (sweepTo)
-    osc.frequency.exponentialRampToValueAtTime(sweepTo, t0 + duration);
-  amp.gain.setValueAtTime(0.0001, t0);
-  amp.gain.exponentialRampToValueAtTime(gain, t0 + 0.012);
-  amp.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
-  osc.connect(amp).connect(ctx.destination);
-  osc.start(t0);
-  osc.stop(t0 + duration + 0.05);
+  const context = getCtx();
+  if (!context || muted) return;
+  const startedAt = context.currentTime + startOffset;
+  const oscillator = context.createOscillator();
+  const amplifier = context.createGain();
+  oscillator.type = type;
+  oscillator.frequency.setValueAtTime(frequency, startedAt);
+  if (sweepTo) {
+    oscillator.frequency.exponentialRampToValueAtTime(
+      sweepTo,
+      startedAt + duration,
+    );
+  }
+  amplifier.gain.setValueAtTime(0.0001, startedAt);
+  amplifier.gain.exponentialRampToValueAtTime(gain, startedAt + 0.012);
+  amplifier.gain.exponentialRampToValueAtTime(
+    0.0001,
+    startedAt + duration,
+  );
+  oscillator.connect(amplifier).connect(context.destination);
+  oscillator.start(startedAt);
+  oscillator.stop(startedAt + duration + 0.05);
 }
 
 function noise(startOffset: number, duration: number, gainValue = 0.12) {
-  const ctx = getCtx();
-  if (!ctx || muted) return;
-  const t0 = ctx.currentTime + startOffset;
-  const frames = Math.floor(ctx.sampleRate * duration);
-  const buffer = ctx.createBuffer(1, frames, ctx.sampleRate);
+  const context = getCtx();
+  if (!context || muted) return;
+  const startedAt = context.currentTime + startOffset;
+  const frames = Math.floor(context.sampleRate * duration);
+  const buffer = context.createBuffer(1, frames, context.sampleRate);
   const data = buffer.getChannelData(0);
-  for (let i = 0; i < frames; i += 1) {
-    data[i] = (Math.random() * 2 - 1) * (1 - i / frames);
+  for (let index = 0; index < frames; index += 1) {
+    data[index] =
+      (Math.random() * 2 - 1) * (1 - index / frames);
   }
-  const source = ctx.createBufferSource();
+  const source = context.createBufferSource();
   source.buffer = buffer;
-  const filter = ctx.createBiquadFilter();
+  const filter = context.createBiquadFilter();
   filter.type = "bandpass";
   filter.frequency.value = 1400;
-  const amp = ctx.createGain();
-  amp.gain.value = gainValue;
-  source.connect(filter).connect(amp).connect(ctx.destination);
-  source.start(t0);
+  const amplifier = context.createGain();
+  amplifier.gain.value = gainValue;
+  source.connect(filter).connect(amplifier).connect(context.destination);
+  source.start(startedAt);
 }
 
 export function sfxTap() {
@@ -376,53 +128,84 @@ export function sfxTap() {
 }
 
 export function sfxPop() {
-  tone(880, 0, 0.12, { type: "sine", gain: 0.2, sweepTo: 220 });
+  tone(880, 0, 0.12, {
+    type: "sine",
+    gain: 0.2,
+    sweepTo: 220,
+  });
   noise(0, 0.08, 0.06);
 }
 
 export function sfxWhoosh() {
   noise(0, 0.22, 0.07);
-  tone(300, 0, 0.2, { type: "sine", gain: 0.08, sweepTo: 900 });
+  tone(300, 0, 0.2, {
+    type: "sine",
+    gain: 0.08,
+    sweepTo: 900,
+  });
 }
 
 export function sfxSuccess() {
-  [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
-    tone(f, i * 0.09, 0.28, { type: "triangle", gain: 0.16 });
+  [523.25, 659.25, 783.99, 1046.5].forEach((frequency, index) => {
+    tone(frequency, index * 0.09, 0.28, {
+      type: "triangle",
+      gain: 0.16,
+    });
   });
 }
 
 export function sfxSparkle() {
-  [1318.5, 1567.98, 2093].forEach((f, i) => {
-    tone(f, i * 0.06, 0.18, { type: "sine", gain: 0.09 });
+  [1318.5, 1567.98, 2093].forEach((frequency, index) => {
+    tone(frequency, index * 0.06, 0.18, {
+      type: "sine",
+      gain: 0.09,
+    });
   });
 }
 
 export function sfxFanfare() {
-  const notes = [523.25, 523.25, 659.25, 783.99, 1046.5, 783.99, 1046.5];
-  notes.forEach((f, i) => {
-    tone(f, i * 0.13, 0.3, { type: "triangle", gain: 0.15 });
+  const notes = [
+    523.25, 523.25, 659.25, 783.99, 1046.5, 783.99, 1046.5,
+  ];
+  notes.forEach((frequency, index) => {
+    tone(frequency, index * 0.13, 0.3, {
+      type: "triangle",
+      gain: 0.15,
+    });
   });
 }
 
 /** Soft and short: a missed balloon is a small "aw", never a buzzer. */
 export function sfxMiss() {
-  tone(392, 0, 0.18, { type: "sine", gain: 0.12, sweepTo: 262 });
+  tone(392, 0, 0.18, {
+    type: "sine",
+    gain: 0.12,
+    sweepTo: 262,
+  });
   tone(262, 0.14, 0.22, { type: "sine", gain: 0.08 });
 }
 
 export function sfxWhistle() {
-  tone(784, 0, 0.55, { type: "sine", gain: 0.13, sweepTo: 587 });
-  tone(1175, 0.04, 0.5, { type: "sine", gain: 0.08, sweepTo: 880 });
+  tone(784, 0, 0.55, {
+    type: "sine",
+    gain: 0.13,
+    sweepTo: 587,
+  });
+  tone(1175, 0.04, 0.5, {
+    type: "sine",
+    gain: 0.08,
+    sweepTo: 880,
+  });
   noise(0, 0.5, 0.04);
 }
 
-/** Chuffs that speed up, so the train audibly gathers pace as it pulls away. */
+/** Chuffs that speed up as the train pulls away. */
 export function sfxChuffs() {
   let at = 0;
-  for (let i = 0; i < 11; i += 1) {
+  for (let index = 0; index < 11; index += 1) {
     noise(at, 0.13, 0.09);
     tone(110, at, 0.11, { type: "sine", gain: 0.09 });
-    at += Math.max(0.1, 0.3 - i * 0.02);
+    at += Math.max(0.1, 0.3 - index * 0.02);
   }
 }
 
@@ -432,16 +215,21 @@ export function sfxCouple() {
 }
 
 export function sfxDoor() {
-  tone(392, 0, 0.16, { type: "triangle", gain: 0.14, sweepTo: 784 });
+  tone(392, 0, 0.16, {
+    type: "triangle",
+    gain: 0.14,
+    sweepTo: 784,
+  });
   tone(784, 0.1, 0.22, { type: "sine", gain: 0.1 });
 }
 
 export function vibrate(pattern: number | number[] = 12) {
-  if (typeof navigator !== "undefined" && "vibrate" in navigator) {
-    try {
-      navigator.vibrate(pattern);
-    } catch {
-      /* ignored: unsupported on iOS */
-    }
+  if (typeof navigator === "undefined" || !("vibrate" in navigator)) {
+    return;
+  }
+  try {
+    navigator.vibrate(pattern);
+  } catch {
+    // Unsupported on iOS; the visual and audio feedback remain.
   }
 }
