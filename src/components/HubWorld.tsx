@@ -149,37 +149,49 @@ export function HubWorld({ onOpen }: { onOpen: (place: PlaceId) => void }) {
           </HoldButton>
         </header>
 
-        <div className="grid min-h-0 flex-1 auto-rows-fr grid-cols-2 gap-2.5 p-3 landscape:grid-cols-5 landscape:grid-rows-1">
-          {PLACES.map((place, index) => {
-            const Scene = SCENES[place.id];
-            // An odd number of places would leave a hole in the last row.
-            const wide = PLACES.length % 2 === 1 && index === PLACES.length - 1;
-            return (
-              <button
-                key={place.id}
-                type="button"
-                aria-label={place.word}
-                onPointerDown={(event) => {
-                  event.preventDefault();
-                  openPlace(place.id);
-                }}
-                className={`anim-pop-in relative flex min-h-0 flex-col items-center justify-center gap-1 rounded-[30px] border-4 border-white/80 bg-linear-to-br ${place.gradient} p-2 shadow-[0_8px_0_rgba(0,0,0,0.14)] transition-transform active:scale-95 ${
-                  wide ? "col-span-2 landscape:col-span-1" : ""
-                }`}
-                style={{ animationDelay: `${index * 70}ms` }}
-              >
-                <Scene
-                  className="h-full min-h-0 w-auto max-w-[86%] flex-1"
-                  title={place.word}
-                />
-                {showWords ? (
-                  <span className="shrink-0 rounded-full bg-white/85 px-3 py-0.5 text-base font-bold text-[#2F2A26] sm:text-lg">
-                    {place.label}
-                  </span>
-                ) : null}
-              </button>
-            );
-          })}
+        {/* Scrolls rather than shrinks: new places should make the town longer,
+          not squeeze every card until nothing is a comfortable target. The
+          grid is at least as tall as the screen so a short list still fills
+          it instead of hugging the top. */}
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3">
+          <div className="grid min-h-full grid-cols-2 gap-2.5 [grid-auto-rows:minmax(9rem,1fr)] landscape:grid-cols-3">
+            {PLACES.map((place, index) => {
+              const Scene = SCENES[place.id];
+              // An odd number of places would leave a hole in the last row.
+              const wide =
+                PLACES.length % 2 === 1 && index === PLACES.length - 1;
+              return (
+                <button
+                  key={place.id}
+                  type="button"
+                  aria-label={place.word}
+                  onPointerDown={(event) => {
+                    event.preventDefault();
+                    openPlace(place.id);
+                  }}
+                  className={`anim-pop-in relative flex min-h-0 flex-col items-center justify-center gap-1 rounded-[30px] border-4 border-white/80 bg-linear-to-br ${place.gradient} p-2 shadow-[0_8px_0_rgba(0,0,0,0.14)] transition-transform active:scale-95 ${
+                    wide ? "col-span-2 landscape:col-span-1" : ""
+                  }`}
+                  style={{ animationDelay: `${index * 70}ms` }}
+                >
+                {/* Absolutely positioned so the artwork can never push the
+                  card taller than its row — that is what let one row swallow
+                  a whole landscape screen. */}
+                <span className="relative min-h-0 w-full flex-1">
+                  <Scene
+                    className="absolute inset-0 h-full w-full"
+                    title={place.word}
+                  />
+                </span>
+                  {showWords ? (
+                    <span className="shrink-0 rounded-full bg-white/85 px-3 py-0.5 text-base font-bold text-[#2F2A26] sm:text-lg">
+                      {place.label}
+                    </span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
