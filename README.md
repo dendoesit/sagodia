@@ -20,14 +20,20 @@ Tap Pip the fox in the corner for a greeting, then pick a place:
 | **Balloons**     | counting, with no upper limit     | Pop balloons drifting up from below the screen. The count keeps climbing and cheers every ten; letting one escape off the top starts it over. |
 | **Workshop**     | circle, square, triangle, star, heart | Tap a shape, tap its matching hole.                                  |
 | **Station**      | one, two, three, four             | Couple the wagons in order and the train pulls out of the station. Each wagon carries its numeral *and* that many dots, because the dots are what a three-year-old can already count. |
-| **Listen & find** | all of the above                 | The ear button starts a gentle "Where is the cow?" round — three finds, then it ends itself. |
+| **Listen & find** | all of the above                 | The ear button starts a gentle round — "Touch the cow!" in the farm, "Give me the apple!" in the kitchen, "Find blue!" in the paint tent. Three finds, then it ends itself. |
 
 ### Design rules
 
 - **No reading required.** Every instruction is spoken. Written words appear
   only as a large label under the picture, which parents can turn off.
-- **No failure.** A wrong tap during a "find it" round is never called wrong —
-  the app just says the name of whatever was tapped, so the child still learns.
+- **No failure, but never silence either.** A wrong tap during a "find it"
+  round is answered rather than judged: the thing they touched introduces
+  itself, the app says it is not the one being looked for, the target speaks
+  up, and the question is asked again. Tap the dog while looking for the cat
+  and you get "Woof woof! Not the cat! Meow! Touch the cat!" — two words
+  learned from a mistake, and nothing is ever blocked or scored. Hand Munchy
+  the wrong food and he tastes it, says "Yummy, but I want the cookie!", and
+  spits it back out.
 - **Huge targets, instant feedback.** Interactions fire on `pointerdown`, not
   click, because toddlers drag their finger while pressing.
 - **Every tap answers.** A three-year-old taps far faster than a word takes to
