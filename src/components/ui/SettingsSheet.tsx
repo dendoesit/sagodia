@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { sfxTap, speak } from "@/lib/audio";
+import { isRecognitionSupported } from "@/lib/pronunciation";
 import { updateSettings, useSettings } from "@/lib/settings";
 
 function Toggle({
@@ -99,11 +100,20 @@ export function SettingsSheet({
               speak("Like this");
             }}
           />
+          {isRecognitionSupported() ? (
+            <Toggle
+              label="Check pronunciation in Say it"
+              hint="Sends speech to your browser's recognition service. Your child still earns a star for every try."
+              value={settings.checkPronunciation}
+              onChange={(next) => updateSettings({ checkPronunciation: next })}
+            />
+          ) : null}
         </div>
         <p className="mt-4 text-sm leading-snug text-[#2F2A26]/60">
           Everything is free play — there is no way to lose, no timer and no
           score. The ear button inside each place starts a gentle &ldquo;find
-          it&rdquo; round.
+          it&rdquo; round. In <em>Say it</em> the microphone only measures how
+          loudly your child speaks — nothing is recorded or uploaded.
         </p>
       </div>
     </div>

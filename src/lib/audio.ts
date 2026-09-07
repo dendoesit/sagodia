@@ -64,6 +64,15 @@ export function isUnlocked() {
   return unlocked;
 }
 
+/** Shared with the microphone listener so both live on one AudioContext. */
+export function getAudioContext(): AudioContext | null {
+  return getCtx();
+}
+
+export function isSpeaking(): boolean {
+  return hasSpeech() && window.speechSynthesis.speaking;
+}
+
 export function setMuted(value: boolean) {
   muted = value;
   if (value && hasSpeech()) window.speechSynthesis.cancel();

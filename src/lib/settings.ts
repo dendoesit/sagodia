@@ -7,12 +7,15 @@ export type Settings = {
   muted: boolean;
   showWords: boolean;
   slowVoice: boolean;
+  /** Off by default: see src/lib/pronunciation.ts. */
+  checkPronunciation: boolean;
 };
 
 const DEFAULTS: Settings = {
   muted: false,
   showWords: true,
   slowVoice: false,
+  checkPronunciation: false,
 };
 
 const STORAGE_KEY = "sunny-town-settings";

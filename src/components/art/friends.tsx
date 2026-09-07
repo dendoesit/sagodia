@@ -164,6 +164,49 @@ export function Sparkle({
   );
 }
 
+export function MicGlyph({
+  className,
+  fill = "#FFFFFF",
+}: {
+  className?: string;
+  fill?: string;
+}) {
+  return (
+    <svg viewBox="0 0 100 100" className={className} aria-hidden>
+      <rect x={36} y={8} width={28} height={48} rx={14} fill={fill} stroke={OUTLINE} strokeWidth={4} />
+      <path
+        d="M22 46 a28 28 0 0 0 56 0"
+        fill="none"
+        stroke={OUTLINE}
+        strokeWidth={7}
+        strokeLinecap="round"
+      />
+      <path d="M50 74 L50 90 M34 92 L66 92" stroke={OUTLINE} strokeWidth={7} strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function StarGlyph({
+  className,
+  filled,
+}: {
+  className?: string;
+  filled: boolean;
+}) {
+  return (
+    <svg viewBox="0 0 100 100" className={className} aria-hidden>
+      <path
+        d="M50 8 L60.6 35.4 L89.9 37 L67.1 55.6 L74.7 84 L50 68 L25.3 84 L32.9 55.6 L10.1 37 L39.4 35.4 Z"
+        fill={filled ? "#FFD22E" : "#FFFFFF"}
+        fillOpacity={filled ? 1 : 0.25}
+        stroke="#FFFFFF"
+        strokeWidth={6}
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function HomeGlyph({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 100 100" className={className} aria-hidden>
