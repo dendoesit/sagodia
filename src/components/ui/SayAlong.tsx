@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { MicGlyph, StarGlyph } from "@/components/art/friends";
+import { StarGlyph } from "@/components/art/friends";
 import { Celebration } from "@/components/ui/Celebration";
 import {
   sfxFanfare,
@@ -278,13 +278,26 @@ export function SayAlong({
           {micReady ? (
             <>
               <div
-                className={`grid h-20 w-20 place-items-center rounded-full border-4 transition-colors sm:h-24 sm:w-24 ${
+                aria-label={listening ? "Listening now" : "Getting ready"}
+                className={`flex h-16 w-28 items-center justify-center gap-1.5 rounded-3xl border-4 transition-colors sm:h-20 sm:w-32 ${
                   listening
                     ? "border-white bg-[#5FAF4E]"
                     : "border-white/40 bg-white/15"
                 }`}
               >
-                <MicGlyph className="h-10 w-10 sm:h-12 sm:w-12" />
+                {[0, 1, 2, 3].map((bar) => (
+                  <span
+                    key={bar}
+                    className={`w-2 rounded-full bg-white ${
+                      listening ? "anim-listen-bar" : "h-3 opacity-50"
+                    }`}
+                    style={
+                      listening
+                        ? { animationDelay: `${bar * 110}ms` }
+                        : undefined
+                    }
+                  />
+                ))}
               </div>
               <div className="h-3 w-full overflow-hidden rounded-full bg-white/25">
                 <div
