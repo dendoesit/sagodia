@@ -2,12 +2,16 @@
 
 import { useState } from "react";
 import { ANIMAL_ART } from "@/components/art/animals";
-import { MicGlyph } from "@/components/art/friends";
 import { Celebration } from "@/components/ui/Celebration";
-import { PlaceFrame, RoundButton } from "@/components/ui/PlaceFrame";
+import { PlaceFrame } from "@/components/ui/PlaceFrame";
 import { SayAlong, type SayItem } from "@/components/ui/SayAlong";
 import { useWordBubble } from "@/components/ui/WordBubble";
-import { sfxPop, sfxTap, speak, speakTapped, vibrate } from "@/lib/audio";
+import {
+  sfxPop,
+  speakTapped,
+  stopSpeaking,
+  vibrate,
+} from "@/lib/audio";
 import { ANIMALS, type AnimalWord } from "@/lib/content";
 import { useFindChallenge } from "@/lib/useFindChallenge";
 
@@ -59,39 +63,27 @@ export function FarmGame({ onHome }: { onHome: () => void }) {
     voice: (animal) => [animal.sound],
     question: (word) => `Touch the ${word}!`,
   });
-  /** "picking" waits for the child to choose the animal the round starts on. */
-  const [sayMode, setSayMode] = useState<"off" | "picking" | "saying">("off");
+  const [saying, setSaying] = useState(false);
   const [sayItem, setSayItem] = useState<SayItem>(SAY_ITEMS[0]);
 
   const handleTap = (animal: AnimalWord) => {
-    if (sayMode === "picking") {
-      sfxTap();
-      vibrate();
-      setSayItem(
-        SAY_ITEMS.find((item) => item.id === animal.id) ?? SAY_ITEMS[0],
-      );
-      setSayMode("saying");
-      return;
-    }
     sfxPop();
     vibrate();
     showWord(animal.word);
     // During a round the challenge speaks for both of us, and it needs the
     // animal's own noise to work it into "Woof woof! Not the cat. Meow!".
-    if (challenge.check(animal, [animal.word, animal.sound]) === "idle") {
-      speakTapped(animal.id, [animal.word, animal.sound]);
-    }
-  };
-
-  const toggleSay = () => {
-    if (sayMode !== "off") {
-      setSayMode("off");
+    if (challenge.check(animal, [animal.word, animal.sound]) !== "idle") {
       return;
     }
-    sfxTap();
-    challenge.stop();
-    setSayMode("picking");
-    speak("Pick an animal and say its name with me!");
+    const selected =
+      SAY_ITEMS.find((item) => item.id === animal.id) ?? SAY_ITEMS[0];
+    setSayItem(selected);
+    setSaying(true);
+    // Starts synchronously in the animal tap. SayAlong then waits for this
+    // exact prompt to finish before it arms the microphone.
+    speakTapped(`repeat-${animal.id}`, [
+      `${animal.word}. Now you say it.`,
+    ]);
   };
 
   return (
@@ -108,26 +100,11 @@ export function FarmGame({ onHome }: { onHome: () => void }) {
 
       <PlaceFrame
         onHome={onHome}
-        onAsk={sayMode === "off" ? challenge.start : undefined}
+        onAsk={saying ? undefined : challenge.start}
         asking={challenge.active}
-        prompt={
-          sayMode === "picking"
-            ? "Pick an animal!"
-            : sayMode === "saying"
-              ? null
-              : challenge.prompt
-        }
+        prompt={saying ? null : challenge.prompt}
         bubble={bubble}
         bubbleTone="#2E6B3A"
-        extraButton={
-          <RoundButton
-            label="Say the animals with me"
-            active={sayMode !== "off"}
-            onPress={toggleSay}
-          >
-            <MicGlyph className="h-7 w-7 sm:h-8 sm:w-8" />
-          </RoundButton>
-        }
       >
         <div className="grid min-h-0 flex-1 auto-rows-fr grid-cols-2 gap-2 px-2 pb-3 sm:gap-3 sm:px-4 landscape:grid-cols-4">
           {ANIMALS.map((animal) => (
@@ -140,11 +117,15 @@ export function FarmGame({ onHome }: { onHome: () => void }) {
           ))}
         </div>
 
-        {sayMode === "saying" ? (
+        {saying ? (
           <SayAlong
             items={SAY_ITEMS}
             first={sayItem}
-            onExit={() => setSayMode("off")}
+            promptAlreadyPlaying
+            onExit={() => {
+              stopSpeaking();
+              setSaying(false);
+            }}
           />
         ) : null}
       </PlaceFrame>

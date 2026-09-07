@@ -7,8 +7,9 @@ import {
   sfxFanfare,
   sfxSparkle,
   sfxSuccess,
+  isSpeechBusy,
   speak,
-  stopSpeaking,
+  subscribeSpeechBusy,
   vibrate,
 } from "@/lib/audio";
 import { pickRandom, randomCheer } from "@/lib/content";
@@ -46,10 +47,12 @@ const PROMPT_FALLBACK_MS = 3400;
 export function SayAlong({
   items,
   first,
+  promptAlreadyPlaying = false,
   onExit,
 }: {
   items: SayItem[];
   first: SayItem;
+  promptAlreadyPlaying?: boolean;
   onExit: () => void;
 }) {
   const { checkPronunciation, showWords } = useSettings();
@@ -66,6 +69,7 @@ export function SayAlong({
   const itemRef = useRef(first);
   const timers = useRef<number[]>([]);
   const stopRecognition = useRef<(() => void) | null>(null);
+  const stopBusySubscription = useRef<(() => void) | null>(null);
   const matched = useRef(false);
   const alive = useRef(true);
   /** Breaks the cycle: presenting listens, and listening presents the next one. */
@@ -195,8 +199,22 @@ export function SayAlong({
     presentRef.current = present;
   }, [present]);
 
-  // The tap that opened this is the user gesture the microphone needs, so
-  // permission is asked for here rather than behind another button.
+  const listenAfterCurrentPrompt = useCallback(() => {
+    stopBusySubscription.current?.();
+    if (!isSpeechBusy()) {
+      beginListening();
+      return;
+    }
+    stopBusySubscription.current = subscribeSpeechBusy(() => {
+      if (isSpeechBusy()) return;
+      stopBusySubscription.current?.();
+      stopBusySubscription.current = null;
+      beginListening();
+    });
+  }, [beginListening]);
+
+  // The animal tap opens this overlay, starts its spoken prompt, and grants
+  // microphone permission. There is no separate microphone button.
   const kickoff = useRef(false);
   useEffect(() => {
     if (kickoff.current) return;
@@ -205,9 +223,10 @@ export function SayAlong({
       const ok = await startMic();
       if (!alive.current) return;
       setMicReady(ok);
-      presentRef.current(first);
+      if (promptAlreadyPlaying) listenAfterCurrentPrompt();
+      else presentRef.current(first);
     })();
-  }, [first, startMic]);
+  }, [first, listenAfterCurrentPrompt, promptAlreadyPlaying, startMic]);
 
   useEffect(() => {
     alive.current = true;
@@ -215,7 +234,7 @@ export function SayAlong({
       alive.current = false;
       timers.current.forEach((id) => window.clearTimeout(id));
       stopRecognition.current?.();
-      stopSpeaking();
+      stopBusySubscription.current?.();
     };
   }, []);
 
