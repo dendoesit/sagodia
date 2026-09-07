@@ -10,7 +10,8 @@
 let audioCtx: AudioContext | null = null;
 let voices: SpeechSynthesisVoice[] = [];
 let muted = false;
-let speechRate = 0.85;
+/** Slower than natural speech: single words have to be copyable by a toddler. */
+let speechRate = 0.78;
 let unlocked = false;
 
 type WebkitWindow = Window & { webkitAudioContext?: typeof AudioContext };
@@ -42,7 +43,14 @@ export function initAudio() {
   window.speechSynthesis.addEventListener("voiceschanged", refreshVoices);
 }
 
-/** Must run inside a real user gesture, once per session. */
+/**
+ * Must run inside a real user gesture, once per session.
+ *
+ * Deliberately does *not* queue a silent primer utterance. iOS only honours
+ * speech that starts inside the tap that asked for it, and a primer would
+ * leave the synthesiser "pending", which pushes the first real phrase onto
+ * the interrupt path and out of the gesture — so nothing is ever heard.
+ */
 export function unlockAudio() {
   const ctx = getCtx();
   if (ctx) {
@@ -51,12 +59,7 @@ export function unlockAudio() {
     source.connect(ctx.destination);
     source.start(0);
   }
-  if (hasSpeech()) {
-    refreshVoices();
-    const primer = new SpeechSynthesisUtterance(" ");
-    primer.volume = 0;
-    window.speechSynthesis.speak(primer);
-  }
+  if (hasSpeech()) refreshVoices();
   unlocked = true;
 }
 
@@ -82,17 +85,30 @@ export function setSpeechRate(rate: number) {
   speechRate = rate;
 }
 
-/** Prefer warm, clear voices that toddlers find easy to follow. */
+/**
+ * Warm female English voices, best first. A three-year-old copies the voice
+ * they hear, so this is the accent they will end up with.
+ */
 const PREFERRED_VOICES = [
   "Samantha",
+  "Ava",
+  "Allison",
+  "Susan",
   "Karen",
   "Moira",
+  "Fiona",
   "Google US English",
   "Microsoft Aria",
   "Microsoft Jenny",
+  "Microsoft Michelle",
   "Microsoft Zira",
-  "Fiona",
 ];
+
+/** Voices that read like a screen reader rather than a person. */
+const AVOID_VOICES = ["Albert", "Bad News", "Bahh", "Bells", "Boing", "Bubbles",
+  "Cellos", "Deranged", "Good News", "Jester", "Organ", "Superstar", "Trinoids",
+  "Whisper", "Wobble", "Zarvox", "Eddy", "Flo", "Grandma", "Grandpa", "Reed",
+  "Rocko", "Sandy", "Shelley", "Junior", "Ralph", "Fred"];
 
 function pickVoice(): SpeechSynthesisVoice | null {
   const english = voices.filter((v) =>
@@ -103,9 +119,11 @@ function pickVoice(): SpeechSynthesisVoice | null {
     const match = english.find((v) => v.name.includes(name));
     if (match) return match;
   }
-  return (
-    english.find((v) => v.lang.toLowerCase().startsWith("en-us")) ?? english[0]
+  const usable = english.filter(
+    (v) => !AVOID_VOICES.some((name) => v.name.includes(name)),
   );
+  const pool = usable.length > 0 ? usable : english;
+  return pool.find((v) => v.lang.toLowerCase().startsWith("en-us")) ?? pool[0];
 }
 
 export type SpeakOptions = {
@@ -120,18 +138,34 @@ export type SpeakOptions = {
 
 let queueTimer: number | undefined;
 let busy = false;
+let busySince = 0;
 let busyTimer: number | undefined;
 const busyListeners = new Set<() => void>();
 
 function setBusy(value: boolean) {
   if (busy === value) return;
   busy = value;
+  if (value) busySince = Date.now();
   busyListeners.forEach((listener) => listener());
+}
+
+/**
+ * A wedged `busy` flag would silence the whole app, since every tap asks
+ * permission before speaking. So the flag is only believed while the
+ * synthesiser agrees something is actually happening.
+ */
+function busyIsStale(): boolean {
+  if (!busy) return false;
+  const age = Date.now() - busySince;
+  if (!hasSpeech()) return age > 600;
+  const synth = window.speechSynthesis;
+  if (synth.speaking || synth.pending) return false;
+  return age > 900;
 }
 
 /** True while a phrase is still being spoken. */
 export function isSpeechBusy() {
-  return busy;
+  return busy && !busyIsStale();
 }
 
 export function subscribeSpeechBusy(listener: () => void) {
@@ -171,7 +205,7 @@ function buildUtterance(text: string, rate: number, pitch: number) {
  *    shortly after queueing, the batch is queued once more.
  */
 function speakBatch(parts: string[], options: SpeakOptions = {}) {
-  const { interrupt = true, rate = 1, pitch = 1.15, delay = 0, onEnd } = options;
+  const { interrupt = true, rate = 1, pitch = 1.08, delay = 0, onEnd } = options;
   if (muted || !hasSpeech() || parts.length === 0) {
     // Still hold the lock briefly, so muted play is not a tap free-for-all.
     setBusy(true);
@@ -219,17 +253,21 @@ function speakBatch(parts: string[], options: SpeakOptions = {}) {
   const fire = () => {
     enqueue();
     window.setTimeout(() => {
-      if (!started && !muted && !synth.speaking) enqueue();
+      if (!started && !muted && !synth.speaking && !synth.pending) enqueue();
     }, 320);
   };
 
   window.clearTimeout(queueTimer);
-  if (interrupt) {
+  const active = synth.speaking || synth.pending;
+  if (interrupt && active) {
     synth.cancel();
     queueTimer = window.setTimeout(fire, Math.max(60, delay));
   } else if (delay > 0) {
     queueTimer = window.setTimeout(fire, delay);
   } else {
+    // Synchronous on purpose. There is nothing to interrupt, and iOS only
+    // speaks phrases that start inside the tap that asked for them — going
+    // through a timer here is what made the app fall silent on iPhone.
     fire();
   }
 }
@@ -251,12 +289,34 @@ export function speakSequence(parts: string[], options: SpeakOptions = {}) {
  * off mid-syllable, so they never actually heard one.
  */
 export function speakExclusive(parts: string[], options: SpeakOptions = {}): boolean {
-  if (busy) return false;
+  if (isSpeechBusy()) return false;
+  speakBatch(parts, options);
+  return true;
+}
+
+let lastTapped = "";
+
+/**
+ * Says the name of a thing the child just tapped.
+ *
+ * Tapping a *different* thing interrupts whatever is being said, because the
+ * child has moved on and wants to hear this one — a tap that produces silence
+ * teaches nothing. Tapping the *same* thing again while it is still talking is
+ * ignored, so a repeated tap cannot stutter the word it is already saying.
+ */
+export function speakTapped(
+  key: string,
+  parts: string[],
+  options: SpeakOptions = {},
+): boolean {
+  if (key === lastTapped && isSpeechBusy()) return false;
+  lastTapped = key;
   speakBatch(parts, options);
   return true;
 }
 
 export function stopSpeaking() {
+  lastTapped = "";
   window.clearTimeout(queueTimer);
   window.clearTimeout(busyTimer);
   setBusy(false);
@@ -348,6 +408,27 @@ export function sfxFanfare() {
 export function sfxMiss() {
   tone(392, 0, 0.18, { type: "sine", gain: 0.12, sweepTo: 262 });
   tone(262, 0.14, 0.22, { type: "sine", gain: 0.08 });
+}
+
+export function sfxWhistle() {
+  tone(784, 0, 0.55, { type: "sine", gain: 0.13, sweepTo: 587 });
+  tone(1175, 0.04, 0.5, { type: "sine", gain: 0.08, sweepTo: 880 });
+  noise(0, 0.5, 0.04);
+}
+
+/** Chuffs that speed up, so the train audibly gathers pace as it pulls away. */
+export function sfxChuffs() {
+  let at = 0;
+  for (let i = 0; i < 11; i += 1) {
+    noise(at, 0.13, 0.09);
+    tone(110, at, 0.11, { type: "sine", gain: 0.09 });
+    at += Math.max(0.1, 0.3 - i * 0.02);
+  }
+}
+
+export function sfxCouple() {
+  tone(160, 0, 0.1, { type: "square", gain: 0.07 });
+  noise(0.02, 0.09, 0.05);
 }
 
 export function sfxDoor() {

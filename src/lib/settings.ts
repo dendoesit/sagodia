@@ -26,7 +26,7 @@ const listeners = new Set<() => void>();
 
 function apply(settings: Settings) {
   setMuted(settings.muted);
-  setSpeechRate(settings.slowVoice ? 0.65 : 0.85);
+  setSpeechRate(settings.slowVoice ? 0.6 : 0.78);
 }
 
 function emit() {
