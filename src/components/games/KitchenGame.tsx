@@ -22,7 +22,8 @@ type Flight = {
   food: FoodWord;
   from: { x: number; y: number; size: number };
   to: { x: number; y: number };
-  silent: boolean;
+  /** Munchy sending it back: flies out of the mouth and grows, not shrinks. */
+  spat?: boolean;
 };
 
 function FlyingFood({
@@ -57,10 +58,16 @@ function FlyingFood({
         top: flight.from.y - flight.from.size / 2,
         width: flight.from.size,
         height: flight.from.size,
-        transition: "transform 620ms cubic-bezier(0.45, 0, 0.55, 1)",
+        transition: flight.spat
+          ? "transform 700ms cubic-bezier(0.3, 1.3, 0.6, 1)"
+          : "transform 620ms cubic-bezier(0.45, 0, 0.55, 1)",
         transform: go
-          ? `translate(${dx}px, ${dy}px) scale(0.18) rotate(340deg)`
-          : "none",
+          ? `translate(${dx}px, ${dy}px) scale(${flight.spat ? 1 : 0.18}) rotate(${
+              flight.spat ? -420 : 340
+            }deg)`
+          : flight.spat
+            ? "scale(0.2)"
+            : "none",
       }}
       onTransitionEnd={onArrive}
     >
@@ -99,7 +106,10 @@ function FoodTile({
 
 export function KitchenGame({ onHome }: { onHome: () => void }) {
   const { bubble, showWord } = useWordBubble();
-  const challenge = useFindChallenge(FOODS);
+  const challenge = useFindChallenge(FOODS, {
+    question: (word) => `Give me the ${word}!`,
+    miss: (word) => `Yummy, but I want the ${word}!`,
+  });
   const [flights, setFlights] = useState<Flight[]>([]);
   const [mouth, setMouth] = useState<MunchyMouth>("smile");
   const [happy, setHappy] = useState(0);
@@ -116,7 +126,6 @@ export function KitchenGame({ onHome }: { onHome: () => void }) {
     sfxWhoosh();
     vibrate();
     showWord(food.word);
-    const correct = challenge.check(food);
     flightKey.current += 1;
     setFlights((current) => [
       ...current,
@@ -132,7 +141,6 @@ export function KitchenGame({ onHome }: { onHome: () => void }) {
           x: target.left + target.width / 2,
           y: target.top + target.height * 0.62,
         },
-        silent: correct,
       },
     ]);
     setMouth("open");
@@ -140,10 +148,40 @@ export function KitchenGame({ onHome }: { onHome: () => void }) {
 
   const handleArrive = (flight: Flight) => {
     setFlights((current) => current.filter((item) => item.key !== flight.key));
+
+    // A spat-out mouthful has already had its say on the way in.
+    if (flight.spat) return;
+
     sfxPop();
+
+    // The verdict waits until the food actually reaches the mouth, so Munchy
+    // tastes it before deciding — being told "not the apple" while the banana
+    // is still in the air makes no sense to a three-year-old.
+    const verdict = challenge.check(flight.food, [`${flight.food.word}!`]);
+
+    if (verdict === "wrong") {
+      setMouth("open");
+      window.clearTimeout(mouthTimer.current);
+      mouthTimer.current = window.setTimeout(() => setMouth("smile"), 900);
+      flightKey.current += 1;
+      setFlights((current) => [
+        ...current,
+        {
+          key: flightKey.current,
+          food: flight.food,
+          from: { ...flight.to, size: flight.from.size },
+          to: { x: flight.from.x, y: flight.from.y },
+          spat: true,
+        },
+      ]);
+      return;
+    }
+
     setMouth("chew");
     fed.current += 1;
-    if (!flight.silent) speakTapped(flight.food.id, [`${flight.food.word}!`, "Yum!"]);
+    if (verdict === "idle") {
+      speakTapped(flight.food.id, [`${flight.food.word}!`, "Yum!"]);
+    }
 
     window.clearTimeout(mouthTimer.current);
     mouthTimer.current = window.setTimeout(() => setMouth("smile"), 900);
@@ -151,7 +189,9 @@ export function KitchenGame({ onHome }: { onHome: () => void }) {
     if (fed.current % 5 === 0) {
       setHappy((n) => n + 1);
       sfxSparkle();
-      if (!flight.silent) speak("Thank you! So tasty!", { interrupt: false });
+      if (verdict === "idle") {
+        speak("Thank you! So tasty!", { interrupt: false });
+      }
     }
   };
 
