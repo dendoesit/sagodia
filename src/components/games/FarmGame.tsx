@@ -5,7 +5,7 @@ import { ANIMAL_ART } from "@/components/art/animals";
 import { Celebration } from "@/components/ui/Celebration";
 import { PlaceFrame } from "@/components/ui/PlaceFrame";
 import { useWordBubble } from "@/components/ui/WordBubble";
-import { sfxPop, speakSequence, vibrate } from "@/lib/audio";
+import { sfxPop, speakExclusive, vibrate } from "@/lib/audio";
 import { ANIMALS, type AnimalWord } from "@/lib/content";
 import { useFindChallenge } from "@/lib/useFindChallenge";
 
@@ -52,8 +52,10 @@ export function FarmGame({ onHome }: { onHome: () => void }) {
     sfxPop();
     vibrate();
     showWord(animal.word);
+    // Refused while the last animal is still talking: the name and its sound
+    // are the whole point, and a second tap used to cut them both off.
     if (!challenge.check(animal)) {
-      speakSequence([animal.word, animal.sound]);
+      speakExclusive([animal.word, animal.sound]);
     }
   };
 

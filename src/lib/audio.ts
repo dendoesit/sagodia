@@ -118,46 +118,148 @@ export type SpeakOptions = {
   onEnd?: () => void;
 };
 
-export function speak(text: string, options: SpeakOptions = {}) {
-  const {
-    interrupt = true,
-    rate = 1,
-    pitch = 1.15,
-    delay = 0,
-    onEnd,
-  } = options;
-  if (muted || !hasSpeech()) {
+let queueTimer: number | undefined;
+let busy = false;
+let busyTimer: number | undefined;
+const busyListeners = new Set<() => void>();
+
+function setBusy(value: boolean) {
+  if (busy === value) return;
+  busy = value;
+  busyListeners.forEach((listener) => listener());
+}
+
+/** True while a phrase is still being spoken. */
+export function isSpeechBusy() {
+  return busy;
+}
+
+export function subscribeSpeechBusy(listener: () => void) {
+  busyListeners.add(listener);
+  return () => {
+    busyListeners.delete(listener);
+  };
+}
+
+/** Rough upper bound on how long a phrase takes, used as a stuck-speech escape. */
+function estimateMs(parts: string[], rate: number) {
+  const characters = parts.join(" ").length;
+  return Math.min(9000, Math.max(700, (characters * 80) / Math.max(0.4, speechRate * rate)));
+}
+
+function buildUtterance(text: string, rate: number, pitch: number) {
+  const utterance = new SpeechSynthesisUtterance(text);
+  const voice = pickVoice();
+  if (voice) utterance.voice = voice;
+  utterance.lang = voice?.lang ?? "en-US";
+  utterance.rate = Math.max(0.4, Math.min(1.4, speechRate * rate));
+  utterance.pitch = pitch;
+  utterance.volume = 1;
+  return utterance;
+}
+
+/**
+ * Speaks one or more phrases as a single batch.
+ *
+ * Two browser quirks are worked around here, and both show up as the app
+ * silently saying nothing — which, in an app a pre-reader plays by ear, is
+ * the same as the app being broken:
+ *
+ *  - Chrome discards utterances queued in the same tick as `cancel()`, so an
+ *    interrupting phrase waits a beat for the cancel to settle.
+ *  - Speech synthesis can wedge in a paused state; if nothing has started
+ *    shortly after queueing, the batch is queued once more.
+ */
+function speakBatch(parts: string[], options: SpeakOptions = {}) {
+  const { interrupt = true, rate = 1, pitch = 1.15, delay = 0, onEnd } = options;
+  if (muted || !hasSpeech() || parts.length === 0) {
+    // Still hold the lock briefly, so muted play is not a tap free-for-all.
+    setBusy(true);
+    window.clearTimeout(busyTimer);
+    busyTimer = window.setTimeout(() => setBusy(false), 450);
     if (onEnd) window.setTimeout(onEnd, 300);
     return;
   }
-  const start = () => {
-    if (muted) return;
-    if (interrupt) window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    const voice = pickVoice();
-    if (voice) utterance.voice = voice;
-    utterance.lang = voice?.lang ?? "en-US";
-    utterance.rate = Math.max(0.4, Math.min(1.4, speechRate * rate));
-    utterance.pitch = pitch;
-    utterance.volume = 1;
-    if (onEnd) utterance.onend = () => onEnd();
-    window.speechSynthesis.speak(utterance);
+
+  const synth = window.speechSynthesis;
+  let started = false;
+
+  const release = () => {
+    window.clearTimeout(busyTimer);
+    setBusy(false);
   };
-  if (delay > 0) window.setTimeout(start, delay);
-  else start();
+
+  setBusy(true);
+  window.clearTimeout(busyTimer);
+  busyTimer = window.setTimeout(release, estimateMs(parts, rate) + 1500);
+
+  const enqueue = () => {
+    if (muted) return;
+    if (synth.paused) synth.resume();
+    parts.forEach((part, index) => {
+      const utterance = buildUtterance(part, rate, pitch);
+      utterance.onstart = () => {
+        started = true;
+      };
+      if (index === parts.length - 1) {
+        utterance.onend = () => {
+          started = true;
+          release();
+          onEnd?.();
+        };
+        utterance.onerror = () => {
+          release();
+          onEnd?.();
+        };
+      }
+      synth.speak(utterance);
+    });
+  };
+
+  const fire = () => {
+    enqueue();
+    window.setTimeout(() => {
+      if (!started && !muted && !synth.speaking) enqueue();
+    }, 320);
+  };
+
+  window.clearTimeout(queueTimer);
+  if (interrupt) {
+    synth.cancel();
+    queueTimer = window.setTimeout(fire, Math.max(60, delay));
+  } else if (delay > 0) {
+    queueTimer = window.setTimeout(fire, delay);
+  } else {
+    fire();
+  }
+}
+
+export function speak(text: string, options: SpeakOptions = {}) {
+  speakBatch([text], options);
 }
 
 /** Say several short phrases back to back, e.g. ["Cow", "Moo"]. */
 export function speakSequence(parts: string[], options: SpeakOptions = {}) {
-  parts.forEach((part, index) => {
-    speak(part, {
-      ...options,
-      interrupt: index === 0 && options.interrupt !== false,
-    });
-  });
+  speakBatch(parts, options);
+}
+
+/**
+ * Speaks only if nothing is being said already, and reports whether it took.
+ *
+ * This is the debounce for small hands: a three-year-old taps far faster than
+ * a sentence takes to say, and without this every tap cut the previous word
+ * off mid-syllable, so they never actually heard one.
+ */
+export function speakExclusive(parts: string[], options: SpeakOptions = {}): boolean {
+  if (busy) return false;
+  speakBatch(parts, options);
+  return true;
 }
 
 export function stopSpeaking() {
+  window.clearTimeout(queueTimer);
+  window.clearTimeout(busyTimer);
+  setBusy(false);
   if (hasSpeech()) window.speechSynthesis.cancel();
 }
 
@@ -240,6 +342,12 @@ export function sfxFanfare() {
   notes.forEach((f, i) => {
     tone(f, i * 0.13, 0.3, { type: "triangle", gain: 0.15 });
   });
+}
+
+/** Soft and short: a missed balloon is a small "aw", never a buzzer. */
+export function sfxMiss() {
+  tone(392, 0, 0.18, { type: "sine", gain: 0.12, sweepTo: 262 });
+  tone(262, 0.14, 0.22, { type: "sine", gain: 0.08 });
 }
 
 export function sfxDoor() {

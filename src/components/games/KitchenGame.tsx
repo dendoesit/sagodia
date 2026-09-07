@@ -6,7 +6,14 @@ import { Munchy, type MunchyMouth } from "@/components/art/friends";
 import { Celebration } from "@/components/ui/Celebration";
 import { PlaceFrame } from "@/components/ui/PlaceFrame";
 import { useWordBubble } from "@/components/ui/WordBubble";
-import { sfxPop, sfxSparkle, sfxWhoosh, speak, vibrate } from "@/lib/audio";
+import {
+  sfxPop,
+  sfxSparkle,
+  sfxWhoosh,
+  speak,
+  speakExclusive,
+  vibrate,
+} from "@/lib/audio";
 import { FOODS, type FoodWord } from "@/lib/content";
 import { useFindChallenge } from "@/lib/useFindChallenge";
 
@@ -136,7 +143,9 @@ export function KitchenGame({ onHome }: { onHome: () => void }) {
     sfxPop();
     setMouth("chew");
     fed.current += 1;
-    if (!flight.silent) speak(`${flight.food.word}! Yum!`);
+    // Food can be flung faster than Munchy can chew and talk, so a mouthful
+    // that lands mid-sentence is eaten quietly instead of clipping the word.
+    if (!flight.silent) speakExclusive([`${flight.food.word}!`, "Yum!"]);
 
     window.clearTimeout(mouthTimer.current);
     mouthTimer.current = window.setTimeout(() => setMouth("smile"), 900);

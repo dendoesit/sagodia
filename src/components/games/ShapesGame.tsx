@@ -11,6 +11,7 @@ import {
   sfxSuccess,
   sfxTap,
   speak,
+  speakExclusive,
   vibrate,
 } from "@/lib/audio";
 import { SHAPES, type ShapeWord, randomCheer } from "@/lib/content";
@@ -50,14 +51,14 @@ export function ShapesGame({ onHome }: { onHome: () => void }) {
     vibrate();
     setSelected(shape);
     showWord(shape.word);
-    speak(shape.word);
+    speakExclusive([shape.word]);
   };
 
   const dropInto = (hole: ShapeWord) => {
     if (!selected) {
       sfxTap();
       showWord(hole.word);
-      speak(`This is a ${hole.word.toLowerCase()}. Pick one below!`);
+      speakExclusive([`This is a ${hole.word.toLowerCase()}.`, "Pick one below!"]);
       return;
     }
     if (hole.id !== selected.id) {
@@ -65,7 +66,7 @@ export function ShapesGame({ onHome }: { onHome: () => void }) {
       setWrongHole(hole.id);
       window.setTimeout(() => setWrongHole(null), 500);
       showWord(hole.word);
-      speak(`That one is a ${hole.word.toLowerCase()}.`);
+      speakExclusive([`That one is a ${hole.word.toLowerCase()}.`]);
       return;
     }
 
