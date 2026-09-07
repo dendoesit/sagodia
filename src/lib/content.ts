@@ -136,7 +136,22 @@ export const NUMBER_WORDS = [
   "Eight",
   "Nine",
   "Ten",
+  "Eleven",
+  "Twelve",
+  "Thirteen",
+  "Fourteen",
+  "Fifteen",
+  "Sixteen",
+  "Seventeen",
+  "Eighteen",
+  "Nineteen",
+  "Twenty",
 ];
+
+/** Past twenty the numeral is handed to the voice, which reads it correctly. */
+export function numberWord(value: number): string {
+  return NUMBER_WORDS[value - 1] ?? String(value);
+}
 
 export const CHEERS = [
   "Yes!",

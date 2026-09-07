@@ -164,12 +164,14 @@ button,
   }
 }
 
+/* Starts fully below the bottom edge so balloons drift up into view rather
+   than sitting parked at the bottom where they are awkward to tap. */
 @keyframes rise {
   0% {
-    transform: translateY(0) rotate(0deg);
+    transform: translateY(118%) rotate(0deg);
   }
   100% {
-    transform: translateY(-118vh) rotate(var(--spin, 8deg));
+    transform: translateY(-125vh) rotate(var(--spin, 8deg));
   }
 }
 
