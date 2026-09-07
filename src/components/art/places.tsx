@@ -245,38 +245,6 @@ export function BalloonCartScene(props: ArtProps) {
   );
 }
 
-export function SayItScene(props: ArtProps) {
-  return (
-    <Art {...props}>
-      <g stroke="#FFF3E2" strokeWidth={5} fill="none" strokeLinecap="round">
-        <path d="M22 38 q-10 12 0 24" />
-        <path d="M10 30 q-16 20 0 40" />
-        <path d="M78 38 q10 12 0 24" />
-        <path d="M90 30 q16 20 0 40" />
-      </g>
-      <rect x={38} y={14} width={24} height={42} rx={12} fill="#FFD84D" stroke={OUTLINE} strokeWidth={3.2} />
-      <path d="M40 46 L60 46" stroke={OUTLINE} strokeWidth={2.4} strokeLinecap="round" />
-      <path
-        d="M28 46 a22 22 0 0 0 44 0"
-        fill="none"
-        stroke={OUTLINE}
-        strokeWidth={5}
-        strokeLinecap="round"
-      />
-      <path d="M50 68 L50 84 M36 86 L64 86" stroke={OUTLINE} strokeWidth={5} strokeLinecap="round" />
-      <g transform="translate(64 58) scale(0.34)">
-        <path
-          d="M50 8 L60.6 35.4 L89.9 37 L67.1 55.6 L74.7 84 L50 68 L25.3 84 L32.9 55.6 L10.1 37 L39.4 35.4 Z"
-          fill="#FFD22E"
-          stroke={OUTLINE}
-          strokeWidth={9}
-          strokeLinejoin="round"
-        />
-      </g>
-    </Art>
-  );
-}
-
 export function ShapeWorkshopScene(props: ArtProps) {
   return (
     <Art {...props}>

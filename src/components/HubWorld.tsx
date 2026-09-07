@@ -6,7 +6,6 @@ import {
   BalloonCartScene,
   BarnScene,
   PaintTentScene,
-  SayItScene,
   ShapeWorkshopScene,
   SnackCartScene,
 } from "@/components/art/places";
@@ -24,7 +23,6 @@ const SCENES: Record<
   paint: PaintTentScene,
   balloons: BalloonCartScene,
   shapes: ShapeWorkshopScene,
-  say: SayItScene,
 };
 
 const PIP_LINES = [
@@ -149,7 +147,7 @@ export function HubWorld({ onOpen }: { onOpen: (place: PlaceId) => void }) {
           </HoldButton>
         </header>
 
-        <div className="grid min-h-0 flex-1 auto-rows-fr grid-cols-2 gap-2.5 p-3 landscape:grid-cols-6 landscape:grid-rows-1">
+        <div className="grid min-h-0 flex-1 auto-rows-fr grid-cols-2 gap-2.5 p-3 landscape:grid-cols-5 landscape:grid-rows-1">
           {PLACES.map((place, index) => {
             const Scene = SCENES[place.id];
             // An odd number of places would leave a hole in the last row.
