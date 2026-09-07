@@ -27,6 +27,12 @@ export type Paintable = {
   decor?: string[];
 };
 
+/** "a boat", but "an ice cream". */
+export function withArticle(word: string): string {
+  const lower = word.toLowerCase();
+  return `${/^[aeiou]/.test(lower) ? "an" : "a"} ${lower}`;
+}
+
 const petal = (id: string, cx: number, cy: number): Region => ({
   id,
   kind: "circle",
@@ -152,12 +158,15 @@ export const PAINTABLES: Paintable[] = [
     id: "tree",
     word: "Tree",
     regions: [
-      { id: "trunk", kind: "rect", x: 44, y: 54, width: 12, height: 38, rx: 4 },
-      { id: "crown-left", kind: "circle", cx: 30, cy: 48, r: 19 },
-      { id: "crown-right", kind: "circle", cx: 70, cy: 48, r: 19 },
-      { id: "crown-top", kind: "circle", cx: 50, cy: 30, r: 21 },
-      { id: "apple-left", kind: "circle", cx: 34, cy: 36, r: 6 },
-      { id: "apple-right", kind: "circle", cx: 64, cy: 54, r: 6 },
+      // The trunk starts high enough that the crowns hide its top, so the
+      // three circles read as one canopy instead of leaving a notch.
+      { id: "trunk", kind: "rect", x: 44, y: 44, width: 12, height: 48, rx: 4 },
+      { id: "crown-left", kind: "circle", cx: 31, cy: 47, r: 19 },
+      { id: "crown-right", kind: "circle", cx: 69, cy: 47, r: 19 },
+      { id: "crown-top", kind: "circle", cx: 50, cy: 31, r: 21 },
+      { id: "apple-left", kind: "circle", cx: 28, cy: 55, r: 6 },
+      { id: "apple-right", kind: "circle", cx: 72, cy: 55, r: 6 },
+      { id: "apple-top", kind: "circle", cx: 50, cy: 22, r: 6 },
     ],
   },
   {
@@ -169,7 +178,7 @@ export const PAINTABLES: Paintable[] = [
       { id: "scoop-top", kind: "circle", cx: 50, cy: 30, r: 16 },
       { id: "cherry", kind: "circle", cx: 50, cy: 11, r: 7 },
     ],
-    decor: ["M38 66 L54 82", "M50 62 L64 76"],
+    decor: ["M41 69 L50 78", "M47 66 L56 75"],
   },
   {
     id: "rocket",
@@ -196,10 +205,10 @@ export const PAINTABLES: Paintable[] = [
     decor: [
       "M34 46 q7 -9 14 0",
       "M52 46 q7 -9 14 0",
-      "M32 64 H14",
-      "M32 70 H16",
-      "M68 64 H86",
-      "M68 70 H84",
+      "M31 64 H12",
+      "M33 71 H15",
+      "M69 64 H88",
+      "M67 71 H85",
     ],
   },
   {

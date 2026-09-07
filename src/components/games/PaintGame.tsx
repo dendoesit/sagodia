@@ -14,7 +14,7 @@ import {
   vibrate,
 } from "@/lib/audio";
 import { COLORS, type ColorWord } from "@/lib/content";
-import { PAINTABLES, type Region } from "@/lib/paintables";
+import { PAINTABLES, type Region, withArticle } from "@/lib/paintables";
 import { useFindChallenge } from "@/lib/useFindChallenge";
 
 const BLANK = "#FFFFFF";
@@ -88,7 +88,7 @@ export function PaintGame({ onHome }: { onHome: () => void }) {
     setFills({});
     setFinished(false);
     if (announce) {
-      speak(`A ${PAINTABLES[index].word.toLowerCase()}! Let's paint.`);
+      speak(`${withArticle(PAINTABLES[index].word)}! Let's paint.`);
     }
   }, []);
 
@@ -128,9 +128,9 @@ export function PaintGame({ onHome }: { onHome: () => void }) {
     setParty((n) => n + 1);
     sfxFanfare();
     speak(
-      `Beautiful ${picture.word.toLowerCase()}! Now let's paint a ${PAINTABLES[
-        upcoming
-      ].word.toLowerCase()}.`,
+      `Beautiful ${picture.word.toLowerCase()}! Now let's paint ${withArticle(
+        PAINTABLES[upcoming].word,
+      )}.`,
     );
     swapTimer.current = window.setTimeout(() => goToPicture(upcoming, false), 3600);
   };
