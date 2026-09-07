@@ -14,10 +14,11 @@ Tap Pip the fox in the corner for a greeting, then pick a place:
 
 | Place            | Words taught                      | How you play                                                            |
 | ---------------- | --------------------------------- | ----------------------------------------------------------------------- |
+| **Say it**       | the animals and the food          | The app says a word and then visibly listens — a ring around the picture breathes with the child's own voice. Any attempt earns a star. |
 | **Farm**         | cow, pig, sheep, duck, cat, dog, horse, chicken | Tap an animal — it wiggles, says its name and makes its sound. |
 | **Kitchen**      | apple, banana, orange, strawberry, carrot, broccoli, cookie, grapes | Tap food to fly it into Munchy's mouth. |
-| **Paint tent**   | red, blue, yellow, green, orange, purple, pink, brown | Pick a colour, tap a part of the picture to fill it. Five pictures. |
-| **Balloons**     | one … ten                         | Pop floating balloons and count along to ten.                            |
+| **Paint tent**   | red, blue, yellow, green, orange, purple, pink, brown | Pick a colour, tap a part of the picture to fill it. Eleven pictures, and the yellow arrow moves on to the next one. |
+| **Balloons**     | counting, with no upper limit     | Pop balloons drifting up from below the screen. The count keeps climbing and cheers every ten; letting one escape off the top starts it over. |
 | **Workshop**     | circle, square, triangle, star, heart | Tap a shape, tap its matching hole.                                  |
 | **Listen & find** | all of the above                 | The ear button starts a gentle "Where is the cow?" round — three finds, then it ends itself. |
 
@@ -29,6 +30,10 @@ Tap Pip the fox in the corner for a greeting, then pick a place:
   the app just says the name of whatever was tapped, so the child still learns.
 - **Huge targets, instant feedback.** Interactions fire on `pointerdown`, not
   click, because toddlers drag their finger while pressing.
+- **One word at a time.** A three-year-old taps far faster than a word takes to
+  say. Taps always respond visually, but a new word is only spoken once the
+  previous one has finished, so they actually hear it instead of a stutter of
+  first syllables.
 - **No assets to load.** All characters, food and scenery are hand-written SVG,
   the voice is the browser's speech synthesiser, and every sound effect is
   synthesised with the Web Audio API. The whole game works offline.
@@ -38,6 +43,14 @@ Tap Pip the fox in the corner for a greeting, then pick a place:
 Press **and hold** the gear in the top-right of the town for about a second —
 long enough that a child mashing the screen will not get in. You can mute the
 app, hide the written words and slow the voice down.
+
+**Say it** uses the microphone only to measure loudness, so the listening ring
+reacts to the child's voice; nothing is recorded or sent anywhere. On browsers
+that support speech recognition there is an extra, off-by-default toggle that
+also checks whether the word was pronounced — deliberately off, because
+toddler speech confuses recognisers and being told "no" is the opposite of the
+point. The game works without the microphone too: a big green tick appears
+instead, and the child taps it after saying the word.
 
 ## Run it locally
 
