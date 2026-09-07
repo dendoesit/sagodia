@@ -4,8 +4,15 @@ import { useEffect, useRef, useState } from "react";
 import { ShapeGlyph, ShapeHole } from "@/components/art/shapes";
 import { Celebration } from "@/components/ui/Celebration";
 import { PlaceFrame } from "@/components/ui/PlaceFrame";
-import { WordBubble, useWordBubble } from "@/components/ui/WordBubble";
-import { sfxFanfare, sfxPop, sfxSuccess, sfxTap, speak, vibrate } from "@/lib/audio";
+import { useWordBubble } from "@/components/ui/WordBubble";
+import {
+  sfxFanfare,
+  sfxPop,
+  sfxSuccess,
+  sfxTap,
+  speak,
+  vibrate,
+} from "@/lib/audio";
 import { SHAPES, type ShapeWord, randomCheer } from "@/lib/content";
 
 function shuffle<T>(items: T[]): T[] {
@@ -23,7 +30,10 @@ function shuffle<T>(items: T[]): T[] {
  */
 export function ShapesGame({ onHome }: { onHome: () => void }) {
   const { bubble, showWord } = useWordBubble();
-  const [layout, setLayout] = useState(() => ({ holes: shuffle(SHAPES), tray: shuffle(SHAPES) }));
+  const [layout, setLayout] = useState(() => ({
+    holes: shuffle(SHAPES),
+    tray: shuffle(SHAPES),
+  }));
   const [placed, setPlaced] = useState<Record<string, boolean>>({});
   const [selected, setSelected] = useState<ShapeWord | null>(null);
   const [wrongHole, setWrongHole] = useState<string | null>(null);
@@ -81,9 +91,9 @@ export function ShapesGame({ onHome }: { onHome: () => void }) {
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-linear-to-b from-[#FFD3D8] to-[#E4574C]">
-      <PlaceFrame onHome={onHome}>
+      <PlaceFrame onHome={onHome} bubble={bubble} bubbleTone="#C93F36">
         <div className="flex min-h-0 flex-1 flex-col gap-2 px-3 pb-2">
-          <div className="grid min-h-0 flex-1 grid-cols-3 grid-rows-2 place-items-center gap-2 rounded-[32px] border-4 border-white/70 bg-[#C99B6B] p-2 shadow-inner sm:gap-4">
+          <div className="grid min-h-0 flex-1 grid-cols-3 grid-rows-2 place-items-center gap-2 rounded-[32px] border-4 border-white/70 bg-[#C99B6B] p-2 shadow-inner sm:gap-4 landscape:grid-cols-5 landscape:grid-rows-1">
             {holes.map((hole) => (
               <button
                 key={hole.id}
@@ -99,7 +109,11 @@ export function ShapesGame({ onHome }: { onHome: () => void }) {
               >
                 {placed[hole.id] ? (
                   <span className="anim-pop-in block h-full w-full">
-                    <ShapeGlyph shape={hole.id} fill={hole.hex} className="h-full w-full" />
+                    <ShapeGlyph
+                      shape={hole.id}
+                      fill={hole.hex}
+                      className="h-full w-full"
+                    />
                   </span>
                 ) : (
                   <ShapeHole shape={hole.id} className="h-full w-full" />
@@ -110,7 +124,9 @@ export function ShapesGame({ onHome }: { onHome: () => void }) {
 
           <div className="flex h-[22%] min-h-20 shrink-0 items-center justify-center gap-2 rounded-[28px] border-4 border-white/70 bg-white/40 px-2 sm:gap-4">
             {remaining.length === 0 ? (
-              <p className="text-2xl font-bold text-white drop-shadow">All done!</p>
+              <p className="text-2xl font-bold text-white drop-shadow">
+                All done!
+              </p>
             ) : (
               tray
                 .filter((shape) => !placed[shape.id])
@@ -125,16 +141,21 @@ export function ShapesGame({ onHome }: { onHome: () => void }) {
                       pickShape(shape);
                     }}
                     className={`h-full max-w-24 flex-1 transition-transform active:scale-90 ${
-                      selected?.id === shape.id ? "-translate-y-1 scale-110 drop-shadow-[0_0_12px_#fff]" : ""
+                      selected?.id === shape.id
+                        ? "-translate-y-1 scale-110 drop-shadow-[0_0_12px_#fff]"
+                        : ""
                     }`}
                   >
-                    <ShapeGlyph shape={shape.id} fill={shape.hex} className="h-full w-full" />
+                    <ShapeGlyph
+                      shape={shape.id}
+                      fill={shape.hex}
+                      className="h-full w-full"
+                    />
                   </button>
                 ))
             )}
           </div>
         </div>
-        <WordBubble bubble={bubble} tone="#C93F36" />
       </PlaceFrame>
 
       <Celebration trigger={party} big />

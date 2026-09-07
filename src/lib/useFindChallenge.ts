@@ -80,7 +80,10 @@ export function useFindChallenge<T extends Askable>(items: T[], rounds = 3) {
         setCelebrate((n) => n + 1);
         speak(`${randomCheer()} ${target.word}!`);
         timers.current.push(
-          window.setTimeout(() => ask(pickRandom(items, target)), NEXT_ROUND_MS),
+          window.setTimeout(
+            () => ask(pickRandom(items, target)),
+            NEXT_ROUND_MS,
+          ),
         );
       }
       return true;

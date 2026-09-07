@@ -1,8 +1,23 @@
 export type Region =
   | { id: string; kind: "path"; d: string }
   | { id: string; kind: "circle"; cx: number; cy: number; r: number }
-  | { id: string; kind: "ellipse"; cx: number; cy: number; rx: number; ry: number }
-  | { id: string; kind: "rect"; x: number; y: number; width: number; height: number; rx?: number };
+  | {
+      id: string;
+      kind: "ellipse";
+      cx: number;
+      cy: number;
+      rx: number;
+      ry: number;
+    }
+  | {
+      id: string;
+      kind: "rect";
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      rx?: number;
+    };
 
 export type Paintable = {
   id: string;
@@ -12,7 +27,13 @@ export type Paintable = {
   decor?: string[];
 };
 
-const petal = (id: string, cx: number, cy: number): Region => ({ id, kind: "circle", cx, cy, r: 13 });
+const petal = (id: string, cx: number, cy: number): Region => ({
+  id,
+  kind: "circle",
+  cx,
+  cy,
+  r: 13,
+});
 
 export const PAINTABLES: Paintable[] = [
   {
@@ -20,8 +41,16 @@ export const PAINTABLES: Paintable[] = [
     word: "Flower",
     regions: [
       { id: "stem", kind: "rect", x: 45, y: 40, width: 10, height: 52, rx: 4 },
-      { id: "leaf-left", kind: "path", d: "M46 64 q-22 -16 -28 4 q22 14 28 -4 Z" },
-      { id: "leaf-right", kind: "path", d: "M54 76 q22 -16 28 4 q-22 14 -28 -4 Z" },
+      {
+        id: "leaf-left",
+        kind: "path",
+        d: "M46 64 q-22 -16 -28 4 q22 14 28 -4 Z",
+      },
+      {
+        id: "leaf-right",
+        kind: "path",
+        d: "M54 76 q22 -16 28 4 q-22 14 -28 -4 Z",
+      },
       petal("petal-1", 50, 14),
       petal("petal-2", 67, 24),
       petal("petal-3", 67, 44),
@@ -35,7 +64,11 @@ export const PAINTABLES: Paintable[] = [
     id: "car",
     word: "Car",
     regions: [
-      { id: "body", kind: "path", d: "M6 66 q0 -18 18 -18 h52 q18 0 18 18 v8 q0 6 -6 6 H12 q-6 0 -6 -6 Z" },
+      {
+        id: "body",
+        kind: "path",
+        d: "M6 66 q0 -18 18 -18 h52 q18 0 18 18 v8 q0 6 -6 6 H12 q-6 0 -6 -6 Z",
+      },
       { id: "roof", kind: "path", d: "M26 48 L37 24 H63 L74 48 Z" },
       { id: "window", kind: "path", d: "M39 44 L46 30 H58 L65 44 Z" },
       { id: "wheel-left", kind: "circle", cx: 27, cy: 80, r: 12 },
@@ -46,12 +79,36 @@ export const PAINTABLES: Paintable[] = [
     id: "house",
     word: "House",
     regions: [
-      { id: "chimney", kind: "rect", x: 66, y: 16, width: 11, height: 20, rx: 2 },
+      {
+        id: "chimney",
+        kind: "rect",
+        x: 66,
+        y: 16,
+        width: 11,
+        height: 20,
+        rx: 2,
+      },
       { id: "wall", kind: "rect", x: 18, y: 44, width: 64, height: 46, rx: 4 },
       { id: "roof", kind: "path", d: "M6 46 L50 12 L94 46 Z" },
       { id: "door", kind: "rect", x: 40, y: 62, width: 21, height: 28, rx: 4 },
-      { id: "window-left", kind: "rect", x: 24, y: 52, width: 14, height: 14, rx: 3 },
-      { id: "window-right", kind: "rect", x: 63, y: 52, width: 14, height: 14, rx: 3 },
+      {
+        id: "window-left",
+        kind: "rect",
+        x: 24,
+        y: 52,
+        width: 14,
+        height: 14,
+        rx: 3,
+      },
+      {
+        id: "window-right",
+        kind: "rect",
+        x: 63,
+        y: 52,
+        width: 14,
+        height: 14,
+        rx: 3,
+      },
     ],
   },
   {

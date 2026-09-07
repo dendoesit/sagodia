@@ -14,7 +14,10 @@ import { sfxDoor, sfxSparkle, speak, vibrate } from "@/lib/audio";
 import { PLACES, type PlaceId, pickRandom } from "@/lib/content";
 import { useSettings } from "@/lib/settings";
 
-const SCENES: Record<PlaceId, React.ComponentType<{ className?: string; title?: string }>> = {
+const SCENES: Record<
+  PlaceId,
+  React.ComponentType<{ className?: string; title?: string }>
+> = {
   farm: BarnScene,
   kitchen: SnackCartScene,
   paint: PaintTentScene,
@@ -30,11 +33,23 @@ const PIP_LINES = [
   "Pick a place!",
 ];
 
-function Cloud({ top, duration, scale }: { top: string; duration: number; scale: number }) {
+function Cloud({
+  top,
+  duration,
+  scale,
+}: {
+  top: string;
+  duration: number;
+  scale: number;
+}) {
   return (
     <div
       className="pointer-events-none absolute -left-40 opacity-80"
-      style={{ top, animation: `drift ${duration}s linear infinite`, transform: `scale(${scale})` }}
+      style={{
+        top,
+        animation: `drift ${duration}s linear infinite`,
+        transform: `scale(${scale})`,
+      }}
     >
       <svg viewBox="0 0 160 70" className="h-16 w-40" aria-hidden>
         <g fill="#FFFFFF">
@@ -75,7 +90,10 @@ export function HubWorld({ onOpen }: { onOpen: (place: PlaceId) => void }) {
           aria-hidden
         >
           <path d="M0 18 Q 22 2 46 14 T 100 8 L100 40 L0 40 Z" fill="#8FD673" />
-          <path d="M0 28 Q 30 16 58 26 T 100 22 L100 40 L0 40 Z" fill="#6FBF5C" />
+          <path
+            d="M0 28 Q 30 16 58 26 T 100 22 L100 40 L0 40 Z"
+            fill="#6FBF5C"
+          />
         </svg>
       </div>
 
@@ -97,7 +115,11 @@ export function HubWorld({ onOpen }: { onOpen: (place: PlaceId) => void }) {
                 key={pipTaps}
                 className={`block h-full w-full ${pipTaps > 0 ? "anim-wiggle" : "anim-bob"}`}
               >
-                <Pip waving className="h-full w-full drop-shadow" title="Pip the fox" />
+                <Pip
+                  waving
+                  className="h-full w-full drop-shadow"
+                  title="Pip the fox"
+                />
               </span>
             </button>
             <h1 className="truncate text-2xl font-bold text-white drop-shadow-[0_2px_0_rgba(0,0,0,0.18)] sm:text-3xl">
@@ -143,20 +165,25 @@ export function HubWorld({ onOpen }: { onOpen: (place: PlaceId) => void }) {
                 }`}
                 style={{ animationDelay: `${index * 70}ms` }}
               >
-                <Scene className="h-full min-h-0 w-auto max-w-[86%] flex-1" title={place.word} />
+                <Scene
+                  className="h-full min-h-0 w-auto max-w-[86%] flex-1"
+                  title={place.word}
+                />
                 {showWords ? (
                   <span className="shrink-0 rounded-full bg-white/85 px-3 py-0.5 text-base font-bold text-[#2F2A26] sm:text-lg">
-                    {place.word.replace(/^The /, "")}
+                    {place.label}
                   </span>
                 ) : null}
               </button>
             );
           })}
         </div>
-
       </div>
 
-      <SettingsSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <SettingsSheet
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+      />
     </div>
   );
 }

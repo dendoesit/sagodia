@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { EarGlyph, HomeGlyph } from "@/components/art/friends";
+import { WordBubble, type Bubble } from "@/components/ui/WordBubble";
 import { sfxTap, sfxWhoosh, vibrate } from "@/lib/audio";
 
 export function RoundButton({
@@ -45,12 +46,18 @@ export function PlaceFrame({
   onAsk,
   asking,
   prompt,
+  bubble,
+  bubbleTone,
+  extraButton,
   children,
 }: {
   onHome: () => void;
   onAsk?: () => void;
   asking?: boolean;
   prompt?: ReactNode;
+  bubble?: Bubble | null;
+  bubbleTone?: string;
+  extraButton?: ReactNode;
   children: ReactNode;
 }) {
   return (
@@ -68,14 +75,21 @@ export function PlaceFrame({
           </RoundButton>
         </div>
 
-        {prompt ? (
-          <div className="anim-pop-in mt-1 max-w-[55%] rounded-full bg-white/90 px-4 py-2 text-center text-lg font-semibold text-[#2F2A26] shadow-md sm:text-2xl">
-            {prompt}
-          </div>
-        ) : null}
+        {/* One "what the app is saying" slot: the find-it question when a round
+            is running, otherwise the word that was just spoken. */}
+        <div className="flex min-w-0 flex-1 justify-center pt-1">
+          {prompt ? (
+            <div className="anim-pop-in rounded-full bg-white/90 px-4 py-2 text-center text-lg font-semibold text-[#2F2A26] shadow-md sm:text-2xl">
+              {prompt}
+            </div>
+          ) : (
+            <WordBubble bubble={bubble ?? null} tone={bubbleTone} />
+          )}
+        </div>
 
-        {onAsk ? (
-          <div className="pointer-events-auto">
+        <div className="pointer-events-auto flex items-start gap-2">
+          {extraButton}
+          {onAsk ? (
             <RoundButton
               label="Listen and find"
               active={asking}
@@ -86,13 +100,15 @@ export function PlaceFrame({
             >
               <EarGlyph className="h-7 w-7 sm:h-8 sm:w-8" />
             </RoundButton>
-          </div>
-        ) : (
-          <div className="h-14 w-14 sm:h-16 sm:w-16" />
-        )}
+          ) : (
+            <div className="h-14 w-14 sm:h-16 sm:w-16" />
+          )}
+        </div>
       </div>
 
-      <div className="relative flex min-h-0 flex-1 flex-col pt-[4.75rem] sm:pt-[5.5rem]">{children}</div>
+      <div className="relative flex min-h-0 flex-1 flex-col pt-[4.75rem] sm:pt-[5.5rem]">
+        {children}
+      </div>
     </div>
   );
 }

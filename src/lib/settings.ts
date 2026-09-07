@@ -35,7 +35,8 @@ export function hydrateSettings() {
   hydrated = true;
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (raw) current = { ...DEFAULTS, ...(JSON.parse(raw) as Partial<Settings>) };
+    if (raw)
+      current = { ...DEFAULTS, ...(JSON.parse(raw) as Partial<Settings>) };
   } catch {
     current = DEFAULTS;
   }

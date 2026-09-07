@@ -5,7 +5,7 @@ import { FOOD_ART } from "@/components/art/foods";
 import { Munchy, type MunchyMouth } from "@/components/art/friends";
 import { Celebration } from "@/components/ui/Celebration";
 import { PlaceFrame } from "@/components/ui/PlaceFrame";
-import { WordBubble, useWordBubble } from "@/components/ui/WordBubble";
+import { useWordBubble } from "@/components/ui/WordBubble";
 import { sfxPop, sfxSparkle, sfxWhoosh, speak, vibrate } from "@/lib/audio";
 import { FOODS, type FoodWord } from "@/lib/content";
 import { useFindChallenge } from "@/lib/useFindChallenge";
@@ -18,7 +18,13 @@ type Flight = {
   silent: boolean;
 };
 
-function FlyingFood({ flight, onArrive }: { flight: Flight; onArrive: () => void }) {
+function FlyingFood({
+  flight,
+  onArrive,
+}: {
+  flight: Flight;
+  onArrive: () => void;
+}) {
   const [go, setGo] = useState(false);
   const Glyph = FOOD_ART[flight.food.id];
 
@@ -45,7 +51,9 @@ function FlyingFood({ flight, onArrive }: { flight: Flight; onArrive: () => void
         width: flight.from.size,
         height: flight.from.size,
         transition: "transform 620ms cubic-bezier(0.45, 0, 0.55, 1)",
-        transform: go ? `translate(${dx}px, ${dy}px) scale(0.18) rotate(340deg)` : "none",
+        transform: go
+          ? `translate(${dx}px, ${dy}px) scale(0.18) rotate(340deg)`
+          : "none",
       }}
       onTransitionEnd={onArrive}
     >
@@ -108,8 +116,15 @@ export function KitchenGame({ onHome }: { onHome: () => void }) {
       {
         key: flightKey.current,
         food,
-        from: { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2, size: rect.width },
-        to: { x: target.left + target.width / 2, y: target.top + target.height * 0.62 },
+        from: {
+          x: rect.left + rect.width / 2,
+          y: rect.top + rect.height / 2,
+          size: rect.width,
+        },
+        to: {
+          x: target.left + target.width / 2,
+          y: target.top + target.height * 0.62,
+        },
         silent: correct,
       },
     ]);
@@ -142,15 +157,22 @@ export function KitchenGame({ onHome }: { onHome: () => void }) {
         onAsk={challenge.start}
         asking={challenge.active}
         prompt={challenge.prompt}
+        bubble={bubble}
+        bubbleTone="#B5651D"
       >
-        <div className="flex min-h-0 flex-1 flex-col gap-1 px-2 pb-3 sm:px-4 landscape:flex-row landscape:items-center landscape:gap-3">
-          <div className="flex min-h-0 shrink-0 basis-[34%] items-center justify-center landscape:h-full landscape:basis-[32%]">
-            <div ref={munchyRef} className="anim-bob h-full max-h-52 w-auto">
-              <Munchy mouth={mouth} className="h-full w-auto" title="Munchy" />
+        <div className="flex min-h-0 flex-1 flex-col items-center gap-2 px-2 pb-3 sm:px-4 landscape:flex-row landscape:gap-3">
+          <div className="flex min-h-0 w-full flex-1 items-center justify-center landscape:h-full landscape:w-auto">
+            <div
+              ref={munchyRef}
+              className="anim-bob aspect-square h-full max-h-full max-w-full"
+            >
+              <Munchy mouth={mouth} className="h-full w-full" title="Munchy" />
             </div>
           </div>
 
-          <div className="grid min-h-0 flex-1 auto-rows-fr grid-cols-4 gap-2 landscape:grid-cols-4">
+          {/* Square tiles: four columns by two rows is a 2:1 box, so the art
+              never ends up marooned in a tall thin cell on a phone. */}
+          <div className="grid aspect-2/1 w-full max-w-2xl shrink-0 grid-cols-4 grid-rows-2 gap-2 landscape:h-full landscape:w-auto landscape:max-w-none">
             {FOODS.map((food) => (
               <FoodTile
                 key={food.id}
@@ -161,11 +183,14 @@ export function KitchenGame({ onHome }: { onHome: () => void }) {
             ))}
           </div>
         </div>
-        <WordBubble bubble={bubble} tone="#B5651D" />
       </PlaceFrame>
 
       {flights.map((flight) => (
-        <FlyingFood key={flight.key} flight={flight} onArrive={() => handleArrive(flight)} />
+        <FlyingFood
+          key={flight.key}
+          flight={flight}
+          onArrive={() => handleArrive(flight)}
+        />
       ))}
 
       <Celebration trigger={challenge.celebrate} />

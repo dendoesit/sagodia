@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { Celebration } from "@/components/ui/Celebration";
-import { PlaceFrame } from "@/components/ui/PlaceFrame";
-import { WordBubble, useWordBubble } from "@/components/ui/WordBubble";
+import { PlaceFrame, RoundButton } from "@/components/ui/PlaceFrame";
+import { useWordBubble } from "@/components/ui/WordBubble";
 import { sfxPop, sfxSparkle, sfxTap, speak, vibrate } from "@/lib/audio";
 import { COLORS, type ColorWord } from "@/lib/content";
 import { PAINTABLES, type Region } from "@/lib/paintables";
@@ -35,7 +35,15 @@ function RegionShape({
     case "circle":
       return <circle cx={region.cx} cy={region.cy} r={region.r} {...shared} />;
     case "ellipse":
-      return <ellipse cx={region.cx} cy={region.cy} rx={region.rx} ry={region.ry} {...shared} />;
+      return (
+        <ellipse
+          cx={region.cx}
+          cy={region.cy}
+          rx={region.rx}
+          ry={region.ry}
+          {...shared}
+        />
+      );
     case "rect":
       return (
         <rect
@@ -92,63 +100,15 @@ export function PaintGame({ onHome }: { onHome: () => void }) {
         onAsk={challenge.start}
         asking={challenge.active}
         prompt={challenge.prompt}
-      >
-        <div className="flex min-h-0 flex-1 items-center justify-center px-3 pb-1">
-          <div className="grid h-full w-full max-w-2xl place-items-center rounded-[32px] border-4 border-white/80 bg-white/70 p-2 shadow-lg">
-            <svg viewBox="0 0 100 100" className="h-full max-h-full w-auto" aria-label={picture.word}>
-              {picture.regions.map((region) => (
-                <RegionShape
-                  key={region.id}
-                  region={region}
-                  fill={fills[region.id] ?? BLANK}
-                  onPaint={() => paint(region.id)}
-                />
-              ))}
-              {picture.decor?.map((d) => (
-                <path
-                  key={d}
-                  d={d}
-                  fill="none"
-                  stroke="#2F2A26"
-                  strokeWidth={2.4}
-                  strokeLinecap="round"
-                />
-              ))}
-            </svg>
-          </div>
-        </div>
-
-        <div className="flex shrink-0 items-center justify-center gap-1.5 px-2 pb-3 pt-1 sm:gap-3">
-          {COLORS.map((item) => {
-            const selected = item.id === color.id;
-            const hinted = challenge.hint && challenge.target?.id === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                aria-label={item.word}
-                aria-pressed={selected}
-                onPointerDown={(event) => {
-                  event.preventDefault();
-                  pickColor(item);
-                }}
-                className={`h-12 w-12 rounded-full border-4 shadow-md transition-transform active:scale-90 sm:h-16 sm:w-16 ${
-                  selected ? "-translate-y-2 scale-110 border-white" : "border-white/60"
-                } ${hinted ? "anim-hint" : ""}`}
-                style={{ background: item.hex }}
-              />
-            );
-          })}
-          <button
-            type="button"
-            aria-label="New picture"
-            onPointerDown={(event) => {
-              event.preventDefault();
-              nextPicture();
-            }}
-            className="ml-1 grid h-12 w-12 place-items-center rounded-full border-4 border-white/80 bg-white/40 shadow-md transition-transform active:scale-90 sm:h-16 sm:w-16"
-          >
-            <svg viewBox="0 0 100 100" className="h-7 w-7 sm:h-9 sm:w-9" aria-hidden>
+        bubble={bubble}
+        bubbleTone="#5B3A9E"
+        extraButton={
+          <RoundButton label="New picture" onPress={nextPicture}>
+            <svg
+              viewBox="0 0 100 100"
+              className="h-7 w-7 sm:h-8 sm:w-8"
+              aria-hidden
+            >
               <path
                 d="M82 40 A34 34 0 1 0 84 62"
                 fill="none"
@@ -158,10 +118,68 @@ export function PaintGame({ onHome }: { onHome: () => void }) {
               />
               <path d="M84 14 L88 44 L58 40 Z" fill="#FFFFFF" />
             </svg>
-          </button>
-        </div>
+          </RoundButton>
+        }
+      >
+        <div className="flex min-h-0 flex-1 flex-col gap-2 px-3 pb-3 landscape:flex-row landscape:items-center">
+          <div className="flex min-h-0 flex-1 items-center justify-center">
+            {/* Square canvas in both orientations: a wide card would leave the
+              drawing marooned in the middle of a lot of empty white. */}
+            <div className="grid aspect-square max-h-full w-full max-w-2xl place-items-center rounded-[32px] border-4 border-white/80 bg-white/70 p-2 shadow-lg landscape:h-full landscape:w-auto">
+              <svg
+                viewBox="0 0 100 100"
+                className="h-full w-full"
+                aria-label={picture.word}
+              >
+                {picture.regions.map((region) => (
+                  <RegionShape
+                    key={region.id}
+                    region={region}
+                    fill={fills[region.id] ?? BLANK}
+                    onPaint={() => paint(region.id)}
+                  />
+                ))}
+                {picture.decor?.map((d) => (
+                  <path
+                    key={d}
+                    d={d}
+                    fill="none"
+                    stroke="#2F2A26"
+                    strokeWidth={2.4}
+                    strokeLinecap="round"
+                  />
+                ))}
+              </svg>
+            </div>
+          </div>
 
-        <WordBubble bubble={bubble} tone="#5B3A9E" />
+          {/* Four across on a phone, a two-wide column beside the canvas in
+            landscape — never small enough that a three-year-old misses. */}
+          <div className="mx-auto grid w-full max-w-2xl shrink-0 grid-cols-4 justify-items-center gap-2 landscape:mx-0 landscape:w-36 landscape:grid-cols-2 landscape:content-center">
+            {COLORS.map((item) => {
+              const selected = item.id === color.id;
+              const hinted = challenge.hint && challenge.target?.id === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  aria-label={item.word}
+                  aria-pressed={selected}
+                  onPointerDown={(event) => {
+                    event.preventDefault();
+                    pickColor(item);
+                  }}
+                  className={`aspect-square w-full max-w-16 rounded-full border-4 shadow-md transition-transform active:scale-90 ${
+                    selected
+                      ? "-translate-y-1 scale-110 border-white"
+                      : "border-white/60"
+                  } ${hinted ? "anim-hint" : ""}`}
+                  style={{ background: item.hex }}
+                />
+              );
+            })}
+          </div>
+        </div>
       </PlaceFrame>
 
       <Celebration trigger={challenge.celebrate} />

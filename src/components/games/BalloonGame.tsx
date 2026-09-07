@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Celebration } from "@/components/ui/Celebration";
 import { PlaceFrame } from "@/components/ui/PlaceFrame";
-import { WordBubble, useWordBubble } from "@/components/ui/WordBubble";
 import { sfxFanfare, sfxPop, speak, vibrate } from "@/lib/audio";
 import { NUMBER_WORDS } from "@/lib/content";
+import { useSettings } from "@/lib/settings";
 
 const BALLOON_COLORS = [
   "#E4574C",
@@ -33,13 +33,21 @@ type Balloon = {
 
 let nextKey = 1;
 
-function makeBalloon(index: number): Balloon {
+/**
+ * `spread` gives the first batch a negative delay so the balloons are already
+ * scattered up the screen when the child arrives, instead of piled at the
+ * bottom waiting to launch.
+ */
+function makeBalloon(index: number, spread = false): Balloon {
+  const duration = 9 + Math.random() * 7;
   return {
     key: nextKey++,
-    left: 4 + ((index * 13 + Math.random() * 9) % 82),
+    // Stride 29 keeps consecutive slots apart, so the staggered start does not
+    // line the balloons up in a diagonal.
+    left: 3 + ((index * 29 + Math.random() * 10) % 78),
     color: BALLOON_COLORS[Math.floor(Math.random() * BALLOON_COLORS.length)],
-    duration: 9 + Math.random() * 7,
-    delay: Math.random() * 5,
+    duration,
+    delay: spread ? -(index / SLOTS) * duration : Math.random() * 1.5,
     spin: (Math.random() - 0.5) * 24,
     size: 20 + Math.random() * 8,
   };
@@ -47,24 +55,56 @@ function makeBalloon(index: number): Balloon {
 
 function BalloonArt({ color }: { color: string }) {
   return (
-    <svg viewBox="0 0 100 140" className="h-full w-full drop-shadow-md" aria-hidden>
-      <path d="M50 104 q10 18 -4 34 q-2 -18 -8 -22" fill="none" stroke="#FFFFFF" strokeWidth={3} strokeLinecap="round" />
-      <ellipse cx={50} cy={54} rx={42} ry={50} fill={color} stroke="#00000022" strokeWidth={3} />
-      <path d="M42 102 L58 102 L50 114 Z" fill={color} stroke="#00000022" strokeWidth={2} strokeLinejoin="round" />
+    <svg
+      viewBox="0 0 100 140"
+      className="h-full w-full drop-shadow-md"
+      aria-hidden
+    >
+      <path
+        d="M50 104 q10 18 -4 34 q-2 -18 -8 -22"
+        fill="none"
+        stroke="#FFFFFF"
+        strokeWidth={3}
+        strokeLinecap="round"
+      />
+      <ellipse
+        cx={50}
+        cy={54}
+        rx={42}
+        ry={50}
+        fill={color}
+        stroke="#00000022"
+        strokeWidth={3}
+      />
+      <path
+        d="M42 102 L58 102 L50 114 Z"
+        fill={color}
+        stroke="#00000022"
+        strokeWidth={2}
+        strokeLinejoin="round"
+      />
       <ellipse cx={34} cy={34} rx={11} ry={15} fill="#FFFFFF" opacity={0.45} />
       <circle cx={38} cy={52} r={5} fill="#2F2A26" />
       <circle cx={62} cy={52} r={5} fill="#2F2A26" />
-      <path d="M38 70 q12 12 24 0" fill="none" stroke="#2F2A26" strokeWidth={4} strokeLinecap="round" />
+      <path
+        d="M38 70 q12 12 24 0"
+        fill="none"
+        stroke="#2F2A26"
+        strokeWidth={4}
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
 
 export function BalloonGame({ onHome }: { onHome: () => void }) {
-  const { bubble, showWord } = useWordBubble();
+  const { showWords } = useSettings();
   const [balloons, setBalloons] = useState<Balloon[]>(() =>
-    Array.from({ length: SLOTS }, (_, i) => makeBalloon(i)),
+    Array.from({ length: SLOTS }, (_, i) => makeBalloon(i, true)),
   );
-  const [bursts, setBursts] = useState<{ key: number; x: number; y: number; color: string }[]>([]);
+  const [bursts, setBursts] = useState<
+    { key: number; x: number; y: number; color: string }[]
+  >([]);
   const [count, setCount] = useState(0);
   const [party, setParty] = useState(0);
   const resetTimer = useRef<number | undefined>(undefined);
@@ -74,7 +114,7 @@ export function BalloonGame({ onHome }: { onHome: () => void }) {
   const replace = useCallback((key: number, index: number) => {
     setBalloons((current) =>
       current.map((balloon) =>
-        balloon.key === key ? { ...makeBalloon(index), delay: 0 } : balloon,
+        balloon.key === key ? makeBalloon(index) : balloon,
       ),
     );
   }, []);
@@ -92,13 +132,13 @@ export function BalloonGame({ onHome }: { onHome: () => void }) {
       },
     ]);
     window.setTimeout(
-      () => setBursts((current) => current.filter((b) => b.key !== balloon.key)),
+      () =>
+        setBursts((current) => current.filter((b) => b.key !== balloon.key)),
       520,
     );
 
     const next = count + 1;
     setCount(next);
-    showWord(NUMBER_WORDS[next - 1]);
 
     if (next >= GOAL) {
       sfxFanfare();
@@ -123,12 +163,22 @@ export function BalloonGame({ onHome }: { onHome: () => void }) {
         onHome={onHome}
         prompt={
           <div className="flex items-center gap-2">
-            <span className="text-3xl font-bold tabular-nums sm:text-4xl">{count}</span>
-            <span className="flex max-w-40 flex-wrap gap-1">
+            <span className="text-3xl font-bold tabular-nums sm:text-4xl">
+              {count}
+            </span>
+            {showWords && count > 0 ? (
+              <span
+                key={count}
+                className="anim-word text-xl font-bold text-[#1F8880] sm:text-2xl"
+              >
+                {NUMBER_WORDS[count - 1]}
+              </span>
+            ) : null}
+            <span className="flex flex-nowrap gap-0.5 sm:gap-1">
               {Array.from({ length: GOAL }, (_, i) => (
                 <span
                   key={i}
-                  className={`h-3 w-3 rounded-full transition-colors sm:h-4 sm:w-4 ${
+                  className={`h-2.5 w-2.5 rounded-full transition-colors sm:h-4 sm:w-4 ${
                     i < count ? "bg-[#F79420]" : "bg-[#2F2A26]/15"
                   }`}
                 />
@@ -145,7 +195,11 @@ export function BalloonGame({ onHome }: { onHome: () => void }) {
               aria-label="Pop the balloon"
               onPointerDown={(event) => {
                 event.preventDefault();
-                pop(balloon, index, event.currentTarget.getBoundingClientRect());
+                pop(
+                  balloon,
+                  index,
+                  event.currentTarget.getBoundingClientRect(),
+                );
               }}
               onAnimationEnd={() => replace(balloon.key, index)}
               className="absolute bottom-0 block"
@@ -163,7 +217,6 @@ export function BalloonGame({ onHome }: { onHome: () => void }) {
             </button>
           ))}
         </div>
-        <WordBubble bubble={bubble} tone="#1F8880" />
       </PlaceFrame>
 
       {bursts.map((burst) => (

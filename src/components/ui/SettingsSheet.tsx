@@ -24,7 +24,9 @@ function Toggle({
       className="flex w-full items-center justify-between gap-4 rounded-2xl bg-white/80 px-4 py-3 text-left shadow-sm transition-colors hover:bg-white"
     >
       <span>
-        <span className="block text-lg font-semibold text-[#2F2A26]">{label}</span>
+        <span className="block text-lg font-semibold text-[#2F2A26]">
+          {label}
+        </span>
         <span className="block text-sm text-[#2F2A26]/60">{hint}</span>
       </span>
       <span
@@ -46,7 +48,13 @@ function Toggle({
  * Parent controls. Opened with a press-and-hold so a toddler mashing the
  * screen cannot get in here.
  */
-export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function SettingsSheet({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
   const settings = useSettings();
   if (!open) return null;
   return (
@@ -93,8 +101,9 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
           />
         </div>
         <p className="mt-4 text-sm leading-snug text-[#2F2A26]/60">
-          Everything is free play — there is no way to lose, no timer and no score. The ear button
-          inside each place starts a gentle &ldquo;find it&rdquo; round.
+          Everything is free play — there is no way to lose, no timer and no
+          score. The ear button inside each place starts a gentle &ldquo;find
+          it&rdquo; round.
         </p>
       </div>
     </div>
@@ -152,7 +161,10 @@ export function HoldButton({
     >
       <span
         className="absolute inset-0 bg-[#FFD22E] transition-transform"
-        style={{ transform: `scale(${progress})`, opacity: progress > 0 ? 0.9 : 0 }}
+        style={{
+          transform: `scale(${progress})`,
+          opacity: progress > 0 ? 0.9 : 0,
+        }}
       />
       <span className="relative">{children}</span>
     </button>

@@ -43,9 +43,21 @@ export function Eyes({
     <g className="anim-blink" style={{ animationDelay: `${delay}s` }}>
       {[x1, x2].map((x) => (
         <g key={x}>
-          <circle cx={x} cy={y} r={r} fill="#FFFFFF" stroke="#2F2A26" strokeWidth={2} />
+          <circle
+            cx={x}
+            cy={y}
+            r={r}
+            fill="#FFFFFF"
+            stroke="#2F2A26"
+            strokeWidth={2}
+          />
           <circle cx={x} cy={y + 0.6} r={pupil} fill="#2F2A26" />
-          <circle cx={x + pupil * 0.5} cy={y - pupil * 0.6} r={pupil * 0.38} fill="#FFFFFF" />
+          <circle
+            cx={x + pupil * 0.5}
+            cy={y - pupil * 0.6}
+            r={pupil * 0.38}
+            fill="#FFFFFF"
+          />
         </g>
       ))}
     </g>

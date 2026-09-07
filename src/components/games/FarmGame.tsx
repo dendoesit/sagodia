@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ANIMAL_ART } from "@/components/art/animals";
 import { Celebration } from "@/components/ui/Celebration";
 import { PlaceFrame } from "@/components/ui/PlaceFrame";
-import { WordBubble, useWordBubble } from "@/components/ui/WordBubble";
+import { useWordBubble } from "@/components/ui/WordBubble";
 import { sfxPop, speakSequence, vibrate } from "@/lib/audio";
 import { ANIMALS, type AnimalWord } from "@/lib/content";
 import { useFindChallenge } from "@/lib/useFindChallenge";
@@ -34,7 +34,10 @@ function AnimalTile({
       }`}
       style={{ background: animal.tint }}
     >
-      <span key={taps} className={`block h-[88%] w-[88%] ${taps > 0 ? "anim-wiggle" : ""}`}>
+      <span
+        key={taps}
+        className={`block h-[88%] w-[88%] ${taps > 0 ? "anim-wiggle" : ""}`}
+      >
         <Glyph className="h-full w-full" title={animal.word} />
       </span>
     </button>
@@ -65,13 +68,14 @@ export function FarmGame({ onHome }: { onHome: () => void }) {
         <path d="M0 30 Q 25 12 50 26 T 100 20 L100 60 L0 60 Z" fill="#6FBF5C" />
         <path d="M0 44 Q 30 32 60 42 T 100 38 L100 60 L0 60 Z" fill="#5CA94A" />
       </svg>
-      <div className="pointer-events-none absolute right-4 top-2 h-16 w-16 rounded-full bg-[#FFE066] shadow-[0_0_40px_rgba(255,224,102,0.9)]" />
 
       <PlaceFrame
         onHome={onHome}
         onAsk={challenge.start}
         asking={challenge.active}
         prompt={challenge.prompt}
+        bubble={bubble}
+        bubbleTone="#2E6B3A"
       >
         <div className="grid min-h-0 flex-1 auto-rows-fr grid-cols-2 gap-2 px-2 pb-3 sm:gap-3 sm:px-4 landscape:grid-cols-4">
           {ANIMALS.map((animal) => (
@@ -83,7 +87,6 @@ export function FarmGame({ onHome }: { onHome: () => void }) {
             />
           ))}
         </div>
-        <WordBubble bubble={bubble} tone="#2E6B3A" />
       </PlaceFrame>
 
       <Celebration trigger={challenge.celebrate} />

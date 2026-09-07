@@ -8,46 +8,47 @@ export type PlaceInfo = {
   id: PlaceId;
   /** Spoken when the child taps the place, and announced on entry. */
   word: string;
+  /** Printed on the card. */
+  label: string;
   invitation: string;
   gradient: string;
-  ring: string;
 };
 
 export const PLACES: PlaceInfo[] = [
   {
     id: "farm",
     word: "The farm",
+    label: "Farm",
     invitation: "Tap an animal!",
     gradient: "from-[#9BE07A] to-[#4F9E52]",
-    ring: "#3E7F41",
   },
   {
     id: "kitchen",
     word: "The kitchen",
+    label: "Kitchen",
     invitation: "Feed Munchy!",
     gradient: "from-[#FFE08A] to-[#F79420]",
-    ring: "#D97C10",
   },
   {
     id: "paint",
     word: "The paint tent",
+    label: "Paint",
     invitation: "Pick a color!",
     gradient: "from-[#C7B2F5] to-[#8E5BC4]",
-    ring: "#6F43A3",
   },
   {
     id: "balloons",
     word: "The balloons",
+    label: "Balloons",
     invitation: "Pop and count!",
     gradient: "from-[#9BE7DC] to-[#2FA9A0]",
-    ring: "#1F8880",
   },
   {
     id: "shapes",
     word: "The workshop",
+    label: "Shapes",
     invitation: "Match the shapes!",
     gradient: "from-[#FFB3C1] to-[#E4574C]",
-    ring: "#C93F36",
   },
 ];
 
@@ -144,7 +145,8 @@ export function randomCheer() {
 }
 
 export function pickRandom<T>(items: T[], exclude?: T): T {
-  const pool = exclude === undefined ? items : items.filter((item) => item !== exclude);
+  const pool =
+    exclude === undefined ? items : items.filter((item) => item !== exclude);
   const source = pool.length > 0 ? pool : items;
   return source[Math.floor(Math.random() * source.length)];
 }

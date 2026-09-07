@@ -18,7 +18,8 @@ type WebkitWindow = Window & { webkitAudioContext?: typeof AudioContext };
 function getCtx(): AudioContext | null {
   if (typeof window === "undefined") return null;
   if (!audioCtx) {
-    const Ctor = window.AudioContext ?? (window as WebkitWindow).webkitAudioContext;
+    const Ctor =
+      window.AudioContext ?? (window as WebkitWindow).webkitAudioContext;
     if (!Ctor) return null;
     audioCtx = new Ctor();
   }
@@ -85,13 +86,17 @@ const PREFERRED_VOICES = [
 ];
 
 function pickVoice(): SpeechSynthesisVoice | null {
-  const english = voices.filter((v) => v.lang.replace("_", "-").toLowerCase().startsWith("en"));
+  const english = voices.filter((v) =>
+    v.lang.replace("_", "-").toLowerCase().startsWith("en"),
+  );
   if (english.length === 0) return null;
   for (const name of PREFERRED_VOICES) {
     const match = english.find((v) => v.name.includes(name));
     if (match) return match;
   }
-  return english.find((v) => v.lang.toLowerCase().startsWith("en-us")) ?? english[0];
+  return (
+    english.find((v) => v.lang.toLowerCase().startsWith("en-us")) ?? english[0]
+  );
 }
 
 export type SpeakOptions = {
@@ -105,7 +110,13 @@ export type SpeakOptions = {
 };
 
 export function speak(text: string, options: SpeakOptions = {}) {
-  const { interrupt = true, rate = 1, pitch = 1.15, delay = 0, onEnd } = options;
+  const {
+    interrupt = true,
+    rate = 1,
+    pitch = 1.15,
+    delay = 0,
+    onEnd,
+  } = options;
   if (muted || !hasSpeech()) {
     if (onEnd) window.setTimeout(onEnd, 300);
     return;
@@ -130,7 +141,10 @@ export function speak(text: string, options: SpeakOptions = {}) {
 /** Say several short phrases back to back, e.g. ["Cow", "Moo"]. */
 export function speakSequence(parts: string[], options: SpeakOptions = {}) {
   parts.forEach((part, index) => {
-    speak(part, { ...options, interrupt: index === 0 && options.interrupt !== false });
+    speak(part, {
+      ...options,
+      interrupt: index === 0 && options.interrupt !== false,
+    });
   });
 }
 
@@ -155,7 +169,8 @@ function tone(
   const amp = ctx.createGain();
   osc.type = type;
   osc.frequency.setValueAtTime(freq, t0);
-  if (sweepTo) osc.frequency.exponentialRampToValueAtTime(sweepTo, t0 + duration);
+  if (sweepTo)
+    osc.frequency.exponentialRampToValueAtTime(sweepTo, t0 + duration);
   amp.gain.setValueAtTime(0.0001, t0);
   amp.gain.exponentialRampToValueAtTime(gain, t0 + 0.012);
   amp.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);

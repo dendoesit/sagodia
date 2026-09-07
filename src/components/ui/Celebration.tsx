@@ -43,17 +43,29 @@ function buildPieces(count: number, seed: number): Piece[] {
  * Full-screen praise. `trigger` is a counter so the same celebration can fire
  * again immediately.
  */
-export function Celebration({ trigger, big = false }: { trigger: number; big?: boolean }) {
+export function Celebration({
+  trigger,
+  big = false,
+}: {
+  trigger: number;
+  big?: boolean;
+}) {
   const [finished, setFinished] = useState(0);
   const visible = trigger !== 0 && trigger !== finished;
 
   useEffect(() => {
     if (trigger === 0) return;
-    const timer = window.setTimeout(() => setFinished(trigger), big ? 3400 : 2600);
+    const timer = window.setTimeout(
+      () => setFinished(trigger),
+      big ? 3400 : 2600,
+    );
     return () => window.clearTimeout(timer);
   }, [trigger, big]);
 
-  const pieces = useMemo(() => buildPieces(big ? 60 : 34, trigger), [trigger, big]);
+  const pieces = useMemo(
+    () => buildPieces(big ? 60 : 34, trigger),
+    [trigger, big],
+  );
 
   if (!visible) return null;
 
