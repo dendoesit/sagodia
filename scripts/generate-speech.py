@@ -24,6 +24,7 @@ import edge_tts
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "public" / "audio"
 MANIFEST = ROOT / "src" / "lib" / "speechClips.generated.ts"
+OFFLINE_MANIFEST = OUTPUT / "manifest.json"
 VOICE = "en-US-JennyNeural"
 RATE = "-12%"
 
@@ -176,6 +177,10 @@ async def generate() -> None:
         + ";\n"
     )
     MANIFEST.write_text(source, encoding="utf-8")
+    OFFLINE_MANIFEST.write_text(
+        json.dumps(sorted(set(entries.values())), indent=2) + "\n",
+        encoding="utf-8",
+    )
 
 
 if __name__ == "__main__":
