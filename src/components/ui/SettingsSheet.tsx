@@ -102,7 +102,7 @@ export function SettingsSheet({
           />
           {isRecognitionSupported() ? (
             <Toggle
-              label="Check pronunciation in Say it"
+              label="Check animal pronunciation"
               hint="Sends speech to your browser's recognition service. Your child still earns a star for every try."
               value={settings.checkPronunciation}
               onChange={(next) => updateSettings({ checkPronunciation: next })}
@@ -112,8 +112,9 @@ export function SettingsSheet({
         <p className="mt-4 text-sm leading-snug text-[#2F2A26]/60">
           Everything is free play — there is no way to lose, no timer and no
           score. The ear button inside each place starts a gentle &ldquo;find
-          it&rdquo; round. In <em>Say it</em> the microphone only measures how
-          loudly your child speaks — nothing is recorded or uploaded.
+          it&rdquo; round. After an animal is tapped, the microphone only
+          measures how loudly your child speaks — nothing is recorded or
+          uploaded.
         </p>
       </div>
     </div>

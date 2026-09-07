@@ -14,7 +14,7 @@ Tap Pip the fox in the corner for a greeting, then pick a place:
 
 | Place            | Words taught                      | How you play                                                            |
 | ---------------- | --------------------------------- | ----------------------------------------------------------------------- |
-| **Farm**         | cow, pig, sheep, duck, cat, dog, horse, chicken | Tap an animal — it wiggles, says its name and makes its sound. The microphone button turns it into repeat-after-me: the app says a word, then visibly listens while a ring breathes with the child's own voice, and a new animal arrives with every star. |
+| **Farm**         | cow, pig, sheep, duck, cat, dog, horse, chicken | Tap an animal — the app says its name once, then visibly listens while a ring breathes with the child's voice. Each spoken attempt earns a star and brings in another animal. There is no separate microphone button. |
 | **Kitchen**      | apple, banana, orange, strawberry, carrot, broccoli, cookie, grapes | Tap food to fly it into Munchy's mouth. |
 | **Paint tent**   | red, blue, yellow, green, orange, purple, pink, brown | Pick a colour, tap a part of the picture to fill it. Eleven pictures, and the yellow arrow moves on to the next one. |
 | **Balloons**     | counting, with no upper limit     | Pop balloons drifting up from below the screen. The count keeps climbing and cheers every ten; letting one escape off the top starts it over. |
@@ -40,12 +40,13 @@ Tap Pip the fox in the corner for a greeting, then pick a place:
   say. Tapping a *different* thing interrupts and says the new one, because a
   tap that produces silence teaches nothing; tapping the *same* thing again
   waits its turn, so a word can never stutter over itself.
-- **Speech starts inside the tap.** iOS only speaks phrases queued
-  synchronously in the gesture that asked for them, so nothing is deferred
-  behind a timer unless there is really something to interrupt.
-- **No assets to load.** All characters, food and scenery are hand-written SVG,
-  the voice is the browser's speech synthesiser, and every sound effect is
-  synthesised with the Web Audio API. The whole game works offline.
+- **Speech starts inside the tap.** A single reusable audio player starts a
+  bundled voice clip synchronously in the gesture that asked for it. This
+  avoids the unreliable `speechSynthesis` timing path on iOS.
+- **Small, offline assets.** Characters, food and scenery are hand-written
+  SVG. The learning vocabulary is a 2.2 MB library of bundled neural-voice
+  clips; browser speech is only a fallback for an unusual dynamic sentence.
+  Sound effects are synthesised with the Web Audio API.
 
 ### Grown-up settings
 
@@ -53,13 +54,13 @@ Press **and hold** the gear in the top-right of the town for about a second —
 long enough that a child mashing the screen will not get in. You can mute the
 app, hide the written words and slow the voice down.
 
-The farm's repeat-after-me mode uses the microphone only to measure loudness, so the listening ring
-reacts to the child's voice; nothing is recorded or sent anywhere. On browsers
-that support speech recognition there is an extra, off-by-default toggle that
-also checks whether the word was pronounced — deliberately off, because
-toddler speech confuses recognisers and being told "no" is the opposite of the
-point. The game works without the microphone too: a big green tick appears
-instead, and the child taps it after saying the word.
+After an animal is tapped, the microphone only measures loudness so the
+listening ring reacts to the child's voice; nothing is recorded or sent
+anywhere. On browsers that support speech recognition there is an extra,
+off-by-default toggle that also checks whether the word was pronounced. It is
+deliberately off because toddler speech confuses recognisers and being told
+"no" is the opposite of the point. Without microphone access, a large green
+tick appears so the child can still complete the speaking turn.
 
 ## Run it locally
 
@@ -71,6 +72,14 @@ npm run dev
 Open http://localhost:43127. Other scripts: `npm run build`, `npm run lint`,
 `npm run typecheck`, and `npm run icons` to re-render the home-screen icons
 from `scripts/generate-icons.mjs`.
+
+The checked-in voice clips are ready to use. To regenerate them with the same
+warm, slightly slowed voice:
+
+```bash
+python3 -m pip install edge-tts==7.2.8
+python3 scripts/generate-speech.py
+```
 
 ## Deploy to Vercel and install on an iPhone
 
@@ -86,20 +95,17 @@ To install it on an iPhone:
 
 ### About the sound on iOS
 
-iOS refuses to play audio or speech unless it starts inside a real user
-gesture, which is why the app opens on a splash screen with one big play
-button — that first tap unlocks the speech synthesiser for the session. If the
-phone is on **silent**, spoken words still play but sound effects may not;
-switch the ringer on for the full experience.
-
-The voice comes from the device, so it sounds different on iOS, Android and
-desktop. The app asks for a warm en-US voice (Samantha on Apple devices) and
-falls back to whatever English voice is available.
+iOS refuses to start media unless it begins inside a real user gesture, which
+is why the app opens on a splash screen with one large play button. That tap
+unlocks one reusable audio player. Vocabulary then sounds identical on iOS,
+Android and desktop because it comes from the checked-in voice clips, not the
+device's speech synthesiser. Dynamic sentences without a bundled clip fall
+back to a preferred English device voice.
 
 ## Tech
 
-Next.js (App Router) · TypeScript · Tailwind CSS v4 · Web Speech API · Web
-Audio API · a hand-rolled service worker for offline play.
+Next.js (App Router) · TypeScript · Tailwind CSS v4 · HTML Audio · Web Speech
+fallback · Web Audio API · a hand-rolled service worker for offline play.
 
 ```
 src/
