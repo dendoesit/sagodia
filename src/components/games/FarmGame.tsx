@@ -55,7 +55,10 @@ function AnimalTile({
 
 export function FarmGame({ onHome }: { onHome: () => void }) {
   const { bubble, showWord } = useWordBubble();
-  const challenge = useFindChallenge(ANIMALS);
+  const challenge = useFindChallenge(ANIMALS, {
+    voice: (animal) => [animal.sound],
+    question: (word) => `Touch the ${word}!`,
+  });
   /** "picking" waits for the child to choose the animal the round starts on. */
   const [sayMode, setSayMode] = useState<"off" | "picking" | "saying">("off");
   const [sayItem, setSayItem] = useState<SayItem>(SAY_ITEMS[0]);
@@ -73,7 +76,9 @@ export function FarmGame({ onHome }: { onHome: () => void }) {
     sfxPop();
     vibrate();
     showWord(animal.word);
-    if (!challenge.check(animal)) {
+    // During a round the challenge speaks for both of us, and it needs the
+    // animal's own noise to work it into "Woof woof! Not the cat. Meow!".
+    if (challenge.check(animal, [animal.word, animal.sound]) === "idle") {
       speakTapped(animal.id, [animal.word, animal.sound]);
     }
   };

@@ -70,7 +70,10 @@ function RegionShape({
 
 export function PaintGame({ onHome }: { onHome: () => void }) {
   const { bubble, showWord } = useWordBubble();
-  const challenge = useFindChallenge(COLORS);
+  const challenge = useFindChallenge(COLORS, {
+    question: (word) => `Find ${word}!`,
+    miss: (word) => `That is not ${word}.`,
+  });
   const [pictureIndex, setPictureIndex] = useState(0);
   const [color, setColor] = useState<ColorWord>(COLORS[0]);
   const [fills, setFills] = useState<Record<string, string>>({});
@@ -102,7 +105,9 @@ export function PaintGame({ onHome }: { onHome: () => void }) {
     vibrate();
     setColor(next);
     showWord(next.word);
-    if (!challenge.check(next)) speakTapped(next.id, [next.word]);
+    if (challenge.check(next, [next.word]) === "idle") {
+      speakTapped(next.id, [next.word]);
+    }
   };
 
   const paint = (regionId: string) => {

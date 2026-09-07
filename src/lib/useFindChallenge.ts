@@ -1,10 +1,19 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { sfxFanfare, sfxSuccess, speak } from "@/lib/audio";
+import {
+  sfxFanfare,
+  sfxMiss,
+  sfxSuccess,
+  speakSequence,
+  vibrate,
+} from "@/lib/audio";
 import { pickRandom, randomCheer } from "@/lib/content";
 
 type Askable = { id: string; word: string };
+
+/** What a tap meant: no round is running, or it was the answer, or it wasn't. */
+export type Verdict = "idle" | "correct" | "wrong";
 
 const HINT_AFTER_MS = 8000;
 const NEXT_ROUND_MS = 2400;
@@ -12,11 +21,27 @@ const NEXT_ROUND_MS = 2400;
 /**
  * The gentle quiz layered on top of free play: "Where is the cow?".
  *
- * Deliberately failure-free — a wrong tap is never called wrong, it just does
- * the normal thing (says that word), so the child keeps learning either way.
- * The round ends itself after a few finds so there is no button to escape.
+ * A wrong tap is never scored against the child and never blocks them. It
+ * answers instead: the thing they touched introduces itself, the app says it
+ * is not the one being looked for, the target speaks up, and the question is
+ * asked again. Both taps teach a word, which is the whole point.
  */
-export function useFindChallenge<T extends Askable>(items: T[], rounds = 3) {
+export function useFindChallenge<T extends Askable>(
+  items: T[],
+  {
+    rounds = 3,
+    /** Extra sound the item itself makes, e.g. an animal's noise. */
+    voice,
+    /** How the round is asked. Each place phrases it in its own verb. */
+    question = (word: string) => `Where is the ${word}?`,
+    miss = (word: string) => `Not the ${word}!`,
+  }: {
+    rounds?: number;
+    voice?: (item: T) => string[];
+    question?: (word: string) => string;
+    miss?: (word: string) => string;
+  } = {},
+) {
   const [target, setTarget] = useState<T | null>(null);
   const [hint, setHint] = useState(false);
   const [solved, setSolved] = useState(false);
@@ -38,15 +63,15 @@ export function useFindChallenge<T extends Askable>(items: T[], rounds = 3) {
       setTarget(next);
       setSolved(false);
       setHint(false);
-      speak(`Where is the ${next.word.toLowerCase()}?`);
+      speakSequence([question(next.word.toLowerCase())]);
       timers.current.push(
         window.setTimeout(() => {
           setHint(true);
-          speak(`Can you find the ${next.word.toLowerCase()}?`);
+          speakSequence(["Try again.", question(next.word.toLowerCase())]);
         }, HINT_AFTER_MS),
       );
     },
-    [clearTimers],
+    [clearTimers, question],
   );
 
   const start = useCallback(() => {
@@ -61,10 +86,30 @@ export function useFindChallenge<T extends Askable>(items: T[], rounds = 3) {
     setSolved(false);
   }, [clearTimers]);
 
-  /** Returns true when this tap was the answer, so callers can skip their own feedback. */
+  /**
+   * `reaction` is what the tapped thing itself says — "Woof woof!", "Yellow!"
+   * — and it is spoken first either way, so the child always hears the name
+   * of whatever they actually touched.
+   */
   const check = useCallback(
-    (item: T) => {
-      if (!target || solved || item.id !== target.id) return false;
+    (item: T, reaction: string[] = []): Verdict => {
+      if (!target || solved) return "idle";
+      const name = target.word.toLowerCase();
+
+      if (item.id !== target.id) {
+        clearTimers();
+        sfxMiss();
+        vibrate([10, 40, 10]);
+        setHint(true);
+        speakSequence([
+          ...reaction,
+          miss(name),
+          ...(voice ? voice(target) : []),
+          question(name),
+        ]);
+        return "wrong";
+      }
+
       clearTimers();
       setSolved(true);
       setHint(false);
@@ -73,12 +118,19 @@ export function useFindChallenge<T extends Askable>(items: T[], rounds = 3) {
       if (done) {
         sfxFanfare();
         setFinale((n) => n + 1);
-        speak(`${randomCheer()} ${target.word}! You found them all!`);
+        speakSequence([
+          `${randomCheer()} ${target.word}!`,
+          ...(voice ? voice(target) : []),
+          "You found them all!",
+        ]);
         timers.current.push(window.setTimeout(() => stop(), NEXT_ROUND_MS));
       } else {
         sfxSuccess();
         setCelebrate((n) => n + 1);
-        speak(`${randomCheer()} ${target.word}!`);
+        speakSequence([
+          `${randomCheer()} ${target.word}!`,
+          ...(voice ? voice(target) : []),
+        ]);
         timers.current.push(
           window.setTimeout(
             () => ask(pickRandom(items, target)),
@@ -86,9 +138,9 @@ export function useFindChallenge<T extends Askable>(items: T[], rounds = 3) {
           ),
         );
       }
-      return true;
+      return "correct";
     },
-    [ask, clearTimers, items, rounds, solved, stop, target],
+    [ask, clearTimers, items, miss, question, rounds, solved, stop, target, voice],
   );
 
   return {
@@ -98,7 +150,7 @@ export function useFindChallenge<T extends Askable>(items: T[], rounds = 3) {
     active: target !== null,
     celebrate,
     finale,
-    prompt: target ? `Where is the ${target.word.toLowerCase()}?` : null,
+    prompt: target ? question(target.word.toLowerCase()) : null,
     start,
     stop,
     check,
