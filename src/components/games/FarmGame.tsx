@@ -14,6 +14,7 @@ import {
 } from "@/lib/audio";
 import { ANIMALS, type AnimalWord } from "@/lib/content";
 import { useFindChallenge } from "@/lib/useFindChallenge";
+import { primeVoiceInput } from "@/lib/useVoiceListener";
 
 const SAY_ITEMS: SayItem[] = ANIMALS.map((animal) => ({
   id: animal.id,
@@ -77,6 +78,7 @@ export function FarmGame({ onHome }: { onHome: () => void }) {
     }
     const selected =
       SAY_ITEMS.find((item) => item.id === animal.id) ?? SAY_ITEMS[0];
+    void primeVoiceInput();
     setSayItem(selected);
     setSaying(true);
     // Starts synchronously in the animal tap. SayAlong then waits for this

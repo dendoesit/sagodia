@@ -15,6 +15,50 @@ type Options = {
 /** Frames above the threshold before we believe it — filters out door slams. */
 const FRAMES_TO_CONFIRM = 7;
 const MIN_THRESHOLD = 0.035;
+const CONSTRAINTS: MediaTrackConstraints = {
+  echoCancellation: true,
+  noiseSuppression: true,
+  autoGainControl: true,
+};
+
+let sharedStream: MediaStream | null = null;
+let sharedRequest: Promise<MediaStream | null> | null = null;
+
+function streamIsLive(stream: MediaStream | null): stream is MediaStream {
+  return Boolean(
+    stream?.getAudioTracks().some((track) => track.readyState === "live"),
+  );
+}
+
+/**
+ * Begin the permission request inside the animal's pointer event. SayAlong
+ * later awaits this same promise, so mounting the overlay never asks twice.
+ */
+export function primeVoiceInput(): Promise<MediaStream | null> {
+  if (
+    typeof navigator === "undefined" ||
+    !navigator.mediaDevices?.getUserMedia
+  ) {
+    return Promise.resolve(null);
+  }
+  if (streamIsLive(sharedStream)) return Promise.resolve(sharedStream);
+  if (sharedRequest) return sharedRequest;
+
+  sharedRequest = navigator.mediaDevices
+    .getUserMedia({ audio: CONSTRAINTS })
+    .then((stream) => {
+      sharedStream = stream;
+      return stream;
+    })
+    .catch(() => null);
+  return sharedRequest;
+}
+
+function releaseVoiceInput(stream: MediaStream | null) {
+  stream?.getTracks().forEach((track) => track.stop());
+  if (stream === sharedStream) sharedStream = null;
+  sharedRequest = null;
+}
 
 /**
  * Listens to the microphone purely to know *that* the child spoke and how
@@ -25,7 +69,10 @@ const MIN_THRESHOLD = 0.035;
 export function useVoiceListener({ onFrame, onSpeech }: Options) {
   const [status, setStatus] = useState<ListenStatus>("idle");
   const streamRef = useRef<MediaStream | null>(null);
-  const nodesRef = useRef<{ source: MediaStreamAudioSourceNode; analyser: AnalyserNode } | null>(null);
+  const nodesRef = useRef<{
+    source: MediaStreamAudioSourceNode;
+    analyser: AnalyserNode;
+  } | null>(null);
   const frameRef = useRef(0);
   const armedRef = useRef(false);
   const floorRef = useRef(0.02);
@@ -42,7 +89,7 @@ export function useVoiceListener({ onFrame, onSpeech }: Options) {
     armedRef.current = false;
     nodesRef.current?.source.disconnect();
     nodesRef.current = null;
-    streamRef.current?.getTracks().forEach((track) => track.stop());
+    releaseVoiceInput(streamRef.current);
     streamRef.current = null;
     setStatus("idle");
   }, []);
@@ -51,18 +98,16 @@ export function useVoiceListener({ onFrame, onSpeech }: Options) {
 
   const start = useCallback(async () => {
     if (streamRef.current) return true;
-    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
-      setStatus("blocked");
-      return false;
-    }
     setStatus("starting");
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-      });
+      const stream = await primeVoiceInput();
+      if (!stream) {
+        setStatus("blocked");
+        return false;
+      }
       const ctx = getAudioContext();
       if (!ctx) {
-        stream.getTracks().forEach((track) => track.stop());
+        releaseVoiceInput(stream);
         setStatus("blocked");
         return false;
       }
