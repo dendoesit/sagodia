@@ -19,7 +19,8 @@ const DEFAULTS: Settings = {
   checkPronunciation: false,
 };
 
-const STORAGE_KEY = "sunny-town-settings";
+const STORAGE_KEY = "sunny-town-settings-v2";
+const LEGACY_STORAGE_KEY = "sunny-town-settings";
 
 let current: Settings = DEFAULTS;
 let hydrated = false;
@@ -39,8 +40,22 @@ export function hydrateSettings() {
   hydrated = true;
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (raw)
+    if (raw) {
       current = { ...DEFAULTS, ...(JSON.parse(raw) as Partial<Settings>) };
+    } else {
+      const legacy = window.localStorage.getItem(LEGACY_STORAGE_KEY);
+      if (legacy) {
+        // The previous speech engine could leave testers believing sound was
+        // broken while a stale persisted mute was still active. Preserve the
+        // useful preferences, but turn sound back on once for this migration.
+        current = {
+          ...DEFAULTS,
+          ...(JSON.parse(legacy) as Partial<Settings>),
+          muted: false,
+        };
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
+      }
+    }
   } catch {
     current = DEFAULTS;
   }
