@@ -11,7 +11,7 @@ import {
   sfxSparkle,
   sfxWhoosh,
   speak,
-  speakExclusive,
+  speakTapped,
   vibrate,
 } from "@/lib/audio";
 import { FOODS, type FoodWord } from "@/lib/content";
@@ -143,9 +143,7 @@ export function KitchenGame({ onHome }: { onHome: () => void }) {
     sfxPop();
     setMouth("chew");
     fed.current += 1;
-    // Food can be flung faster than Munchy can chew and talk, so a mouthful
-    // that lands mid-sentence is eaten quietly instead of clipping the word.
-    if (!flight.silent) speakExclusive([`${flight.food.word}!`, "Yum!"]);
+    if (!flight.silent) speakTapped(flight.food.id, [`${flight.food.word}!`, "Yum!"]);
 
     window.clearTimeout(mouthTimer.current);
     mouthTimer.current = window.setTimeout(() => setMouth("smile"), 900);

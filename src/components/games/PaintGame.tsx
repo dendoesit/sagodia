@@ -10,7 +10,7 @@ import {
   sfxSparkle,
   sfxTap,
   speak,
-  speakExclusive,
+  speakTapped,
   vibrate,
 } from "@/lib/audio";
 import { COLORS, type ColorWord } from "@/lib/content";
@@ -102,7 +102,7 @@ export function PaintGame({ onHome }: { onHome: () => void }) {
     vibrate();
     setColor(next);
     showWord(next.word);
-    if (!challenge.check(next)) speakExclusive([next.word]);
+    if (!challenge.check(next)) speakTapped(next.id, [next.word]);
   };
 
   const paint = (regionId: string) => {
@@ -119,7 +119,7 @@ export function PaintGame({ onHome }: { onHome: () => void }) {
     // instead of politely waiting behind the colour word.
     const complete = picture.regions.every((region) => updated[region.id]);
     if (!complete) {
-      speakExclusive([color.word]);
+      speakTapped(`${color.id}-${regionId}`, [color.word]);
       return;
     }
 
