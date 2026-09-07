@@ -2,7 +2,7 @@ import type { AnimalId } from "@/components/art/animals";
 import type { FoodId } from "@/components/art/foods";
 import type { ShapeId } from "@/components/art/shapes";
 
-export type PlaceId = "farm" | "kitchen" | "paint" | "balloons" | "shapes";
+export type PlaceId = "farm" | "kitchen" | "paint" | "balloons" | "shapes" | "say";
 
 export type PlaceInfo = {
   id: PlaceId;
@@ -15,6 +15,13 @@ export type PlaceInfo = {
 };
 
 export const PLACES: PlaceInfo[] = [
+  {
+    id: "say",
+    word: "Say it",
+    label: "Say it!",
+    invitation: "Say the words with me!",
+    gradient: "from-[#9CC4FF] to-[#4F6FE0]",
+  },
   {
     id: "farm",
     word: "The farm",
