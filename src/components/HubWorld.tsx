@@ -8,6 +8,7 @@ import {
   PaintTentScene,
   ShapeWorkshopScene,
   SnackCartScene,
+  StationScene,
 } from "@/components/art/places";
 import { HoldButton, SettingsSheet } from "@/components/ui/SettingsSheet";
 import { sfxDoor, sfxSparkle, speak, vibrate } from "@/lib/audio";
@@ -23,6 +24,7 @@ const SCENES: Record<
   paint: PaintTentScene,
   balloons: BalloonCartScene,
   shapes: ShapeWorkshopScene,
+  station: StationScene,
 };
 
 const PIP_LINES = [

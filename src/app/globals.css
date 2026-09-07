@@ -175,6 +175,78 @@ button,
   }
 }
 
+/* A short roll backwards, the way a real train takes up the slack in the
+   couplings, then away it goes. */
+@keyframes depart {
+  0% {
+    transform: translateX(0);
+  }
+  14% {
+    transform: translateX(-2.5%);
+  }
+  100% {
+    transform: translateX(130vw);
+  }
+}
+
+.anim-depart {
+  animation: depart 3s cubic-bezier(0.5, 0, 0.6, 1) forwards;
+}
+
+@keyframes couple {
+  0% {
+    transform: translateX(55%) scale(0.9);
+    opacity: 0;
+  }
+  70% {
+    transform: translateX(-4%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.anim-couple {
+  animation: couple 0.44s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+}
+
+@keyframes puff {
+  0% {
+    transform: translate(0, 0) scale(0.45);
+    opacity: 0.85;
+  }
+  100% {
+    transform: translate(-64px, -78px) scale(2);
+    opacity: 0;
+  }
+}
+
+.anim-puff {
+  animation: puff 1.5s ease-out infinite;
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  22% {
+    transform: translateX(-7px) rotate(-3deg);
+  }
+  55% {
+    transform: translateX(7px) rotate(3deg);
+  }
+  80% {
+    transform: translateX(-3px) rotate(-1deg);
+  }
+}
+
+.anim-shake {
+  animation: shake 0.46s ease-in-out;
+}
+
 @keyframes confetti-fall {
   0% {
     transform: translate3d(0, -12vh, 0) rotate(0deg);
@@ -232,7 +304,8 @@ button,
   .anim-blink,
   .anim-bob,
   .anim-wave,
-  .anim-hint {
+  .anim-hint,
+  .anim-puff {
     animation: none;
   }
 }

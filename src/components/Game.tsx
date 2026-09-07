@@ -8,6 +8,7 @@ import { FarmGame } from "@/components/games/FarmGame";
 import { KitchenGame } from "@/components/games/KitchenGame";
 import { PaintGame } from "@/components/games/PaintGame";
 import { ShapesGame } from "@/components/games/ShapesGame";
+import { TrainGame } from "@/components/games/TrainGame";
 import { initAudio, stopSpeaking } from "@/lib/audio";
 import type { PlaceId } from "@/lib/content";
 import { hydrateSettings } from "@/lib/settings";
@@ -18,6 +19,7 @@ const GAMES: Record<PlaceId, React.ComponentType<{ onHome: () => void }>> = {
   paint: PaintGame,
   balloons: BalloonGame,
   shapes: ShapesGame,
+  station: TrainGame,
 };
 
 export function Game() {

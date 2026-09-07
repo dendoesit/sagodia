@@ -245,6 +245,102 @@ export function BalloonCartScene(props: ArtProps) {
   );
 }
 
+export function StationScene(props: ArtProps) {
+  return (
+    <Art {...props}>
+      <rect
+        x={10}
+        y={20}
+        width={46}
+        height={44}
+        rx={5}
+        fill="#FFF3E2"
+        stroke={OUTLINE}
+        strokeWidth={3.2}
+      />
+      <path
+        d="M4 22 L33 6 L62 22 Z"
+        fill="#C93F36"
+        stroke={OUTLINE}
+        strokeWidth={3.2}
+        strokeLinejoin="round"
+      />
+      <circle
+        cx={33}
+        cy={32}
+        r={8}
+        fill="#FFFFFF"
+        stroke={OUTLINE}
+        strokeWidth={2.6}
+      />
+      <path
+        d="M33 32 L33 27 M33 32 L37 34"
+        stroke={OUTLINE}
+        strokeWidth={2.2}
+        strokeLinecap="round"
+      />
+      <rect
+        x={18}
+        y={44}
+        width={14}
+        height={20}
+        rx={2}
+        fill="#8ED7FF"
+        stroke={OUTLINE}
+        strokeWidth={2.6}
+      />
+      <rect
+        x={38}
+        y={44}
+        width={14}
+        height={20}
+        rx={2}
+        fill="#8ED7FF"
+        stroke={OUTLINE}
+        strokeWidth={2.6}
+      />
+      <rect
+        x={58}
+        y={40}
+        width={22}
+        height={24}
+        rx={5}
+        fill="#E4574C"
+        stroke={OUTLINE}
+        strokeWidth={3}
+      />
+      <rect
+        x={78}
+        y={30}
+        width={18}
+        height={34}
+        rx={5}
+        fill="#4F8FE0"
+        stroke={OUTLINE}
+        strokeWidth={3}
+      />
+      <rect
+        x={82}
+        y={36}
+        width={10}
+        height={10}
+        rx={2}
+        fill="#BFF0EA"
+        stroke={OUTLINE}
+        strokeWidth={2.2}
+      />
+      <g fill="#8A5A3B">
+        {[8, 22, 36, 50, 64, 78].map((x) => (
+          <rect key={x} x={x} y={72} width={7} height={10} rx={1} />
+        ))}
+      </g>
+      <rect x={2} y={68} width={96} height={5} rx={2.5} fill="#9AA3AE" />
+      <circle cx={64} cy={68} r={7} fill="#3F464F" stroke={OUTLINE} strokeWidth={2.6} />
+      <circle cx={88} cy={68} r={7} fill="#3F464F" stroke={OUTLINE} strokeWidth={2.6} />
+    </Art>
+  );
+}
+
 export function ShapeWorkshopScene(props: ArtProps) {
   return (
     <Art {...props}>

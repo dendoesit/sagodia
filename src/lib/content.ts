@@ -2,7 +2,13 @@ import type { AnimalId } from "@/components/art/animals";
 import type { FoodId } from "@/components/art/foods";
 import type { ShapeId } from "@/components/art/shapes";
 
-export type PlaceId = "farm" | "kitchen" | "paint" | "balloons" | "shapes";
+export type PlaceId =
+  | "farm"
+  | "kitchen"
+  | "paint"
+  | "balloons"
+  | "shapes"
+  | "station";
 
 export type PlaceInfo = {
   id: PlaceId;
@@ -49,6 +55,13 @@ export const PLACES: PlaceInfo[] = [
     label: "Shapes",
     invitation: "Match the shapes!",
     gradient: "from-[#FFB3C1] to-[#E4574C]",
+  },
+  {
+    id: "station",
+    word: "The station",
+    label: "Train",
+    invitation: "Build the train!",
+    gradient: "from-[#A9C4E8] to-[#4F6FA8]",
   },
 ];
 
