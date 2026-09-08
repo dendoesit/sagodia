@@ -164,7 +164,7 @@ function FlyingBalloon({
         onPop(event.currentTarget.getBoundingClientRect());
       }}
       onAnimationEnd={onEscape}
-      className="absolute bottom-0 block will-change-transform disabled:pointer-events-none"
+      className="absolute bottom-0 block opacity-100 transition-opacity duration-500 will-change-transform disabled:pointer-events-none disabled:opacity-0"
       style={
         {
           left: `${balloon.left}%`,
