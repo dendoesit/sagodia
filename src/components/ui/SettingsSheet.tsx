@@ -112,9 +112,9 @@ export function SettingsSheet({
         <p className="mt-4 text-sm leading-snug text-[#2F2A26]/60">
           Everything is free play — there is no way to lose, no timer and no
           score. The ear button inside each place starts a gentle &ldquo;find
-          it&rdquo; round. After an animal is tapped, the microphone only
-          measures how loudly your child speaks — nothing is recorded or
-          uploaded.
+          it&rdquo; round. The animated listening ring is driven locally by
+          microphone volume. When pronunciation checking is enabled, speech
+          is also processed by your browser&apos;s recognition service.
         </p>
       </div>
     </div>

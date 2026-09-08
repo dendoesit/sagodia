@@ -1,13 +1,9 @@
 "use client";
 
 /**
- * Optional pronunciation checking. Off by default: recognising a
- * three-year-old's speech is unreliable, and on most browsers it ships audio
- * to a cloud service, which is not something a children's app should do
- * without the parent choosing it.
- *
- * When it is on, a match only ever *upgrades* the praise. A word it fails to
- * recognise still earns the child a star.
+ * Pronunciation checking through the browser's recognition service. It is
+ * strict about requiring the target word, but deliberately tolerant of small
+ * pronunciation differences common in toddler speech.
  */
 
 type Listener = { transcript: string; isFinal: boolean };
