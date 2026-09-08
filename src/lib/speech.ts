@@ -19,9 +19,12 @@ let activeUtterance: SpeechSynthesisUtterance | null = null;
 let timer: number | undefined;
 let batchId = 0;
 let busy = false;
-let lastTapped = "";
 let voices: SpeechSynthesisVoice[] = [];
 const busyListeners = new Set<() => void>();
+/** Keeps two short words from running into one another. */
+const BETWEEN_WORDS_MS = 220;
+/** Small hands need a beat after a phrase before another tap can replace it. */
+const AFTER_PHRASE_MS = 280;
 
 type WebSpeechWindow = Window & {
   speechSynthesis?: SpeechSynthesis;
@@ -228,14 +231,18 @@ function speakBatch(parts: string[], options: SpeakOptions = {}) {
     setBusy(false);
     onEnd?.();
   };
+  const advance = () => {
+    if (id !== batchId) return;
+    timer = window.setTimeout(
+      index < queue.length ? next : finish,
+      index < queue.length ? BETWEEN_WORDS_MS : AFTER_PHRASE_MS,
+    );
+  };
   const next = () => {
     if (id !== batchId) return;
     const part = queue[index++];
-    if (!part) {
-      finish();
-      return;
-    }
-    playPart(part, rate, pitch, id, next);
+    if (!part) return finish();
+    playPart(part, rate, pitch, id, advance);
   };
 
   if (delay > 0) timer = window.setTimeout(next, delay);
@@ -304,18 +311,16 @@ export function speakExclusive(
 }
 
 export function speakTapped(
-  key: string,
+  _key: string,
   parts: string[],
   options: SpeakOptions = {},
 ): boolean {
-  if (key === lastTapped && busy) return false;
-  lastTapped = key;
+  if (busy) return false;
   speakBatch(parts, options);
   return true;
 }
 
 export function stopSpeaking() {
-  lastTapped = "";
   batchId += 1;
   if (typeof window !== "undefined") clearCurrent();
   setBusy(false);
