@@ -16,6 +16,7 @@ import {
 } from "@/lib/audio";
 import { FOODS, type FoodWord } from "@/lib/content";
 import { useFindChallenge } from "@/lib/useFindChallenge";
+import { useSpeechBusy } from "@/lib/useSpeechBusy";
 
 type Flight = {
   key: number;
@@ -79,10 +80,12 @@ function FlyingFood({
 function FoodTile({
   food,
   hint,
+  disabled,
   onTap,
 }: {
   food: FoodWord;
   hint: boolean;
+  disabled: boolean;
   onTap: (food: FoodWord, rect: DOMRect) => void;
 }) {
   const Glyph = FOOD_ART[food.id];
@@ -90,11 +93,12 @@ function FoodTile({
     <button
       type="button"
       aria-label={food.word}
+      disabled={disabled}
       onPointerDown={(event) => {
         event.preventDefault();
         onTap(food, event.currentTarget.getBoundingClientRect());
       }}
-      className={`grid h-full w-full place-items-center rounded-[26px] border-4 border-white/75 p-1 shadow-[0_6px_0_rgba(0,0,0,0.12)] transition-transform active:scale-90 ${
+      className={`grid h-full w-full place-items-center rounded-[26px] border-4 border-white/75 p-1 shadow-[0_6px_0_rgba(0,0,0,0.12)] transition-[filter,opacity,transform] active:scale-90 disabled:opacity-55 disabled:saturate-50 ${
         hint ? "anim-hint" : ""
       }`}
       style={{ background: food.tint }}
@@ -106,6 +110,7 @@ function FoodTile({
 
 export function KitchenGame({ onHome }: { onHome: () => void }) {
   const { bubble, showWord } = useWordBubble();
+  const speechBusy = useSpeechBusy();
   const challenge = useFindChallenge(FOODS, {
     question: (word) => `Give me the ${word}!`,
     miss: (word) => `Yummy, but I want the ${word}!`,
@@ -117,10 +122,12 @@ export function KitchenGame({ onHome }: { onHome: () => void }) {
   const flightKey = useRef(0);
   const fed = useRef(0);
   const mouthTimer = useRef<number | undefined>(undefined);
+  const foodLocked = speechBusy || flights.length > 0;
 
   useEffect(() => () => window.clearTimeout(mouthTimer.current), []);
 
   const handleTap = (food: FoodWord, rect: DOMRect) => {
+    if (foodLocked) return;
     const target = munchyRef.current?.getBoundingClientRect();
     if (!target) return;
     sfxWhoosh();
@@ -225,6 +232,7 @@ export function KitchenGame({ onHome }: { onHome: () => void }) {
                 key={food.id}
                 food={food}
                 hint={challenge.hint && challenge.target?.id === food.id}
+                disabled={foodLocked}
                 onTap={handleTap}
               />
             ))}
