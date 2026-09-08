@@ -138,15 +138,15 @@ export function BalloonGame({ onHome }: { onHome: () => void }) {
   }, []);
 
   const pop = (balloon: Balloon, index: number, rect: DOMRect) => {
-    // Counting only teaches anything if each number is heard to the end, so a
-    // pop is refused while the previous number is still being said.
     const next = count + 1;
     const word = numberWord(next);
     const milestone = next % STEP === 0;
-    const spoken = speakExclusive(
+    // Narration may skip a number when the child pops very quickly, but play
+    // never freezes behind the voice. The old early return made every balloon
+    // ignore taps until the previous number had finished.
+    speakExclusive(
       milestone ? [`${word}!`, "Wow!"] : [word],
     );
-    if (!spoken) return;
 
     sfxPop();
     vibrate(20);
