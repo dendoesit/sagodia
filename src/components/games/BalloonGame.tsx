@@ -299,7 +299,7 @@ export function BalloonGame({ onHome }: { onHome: () => void }) {
           below this clipping plane and rise into the play area. */}
         <div
           data-balloon-field
-          className="relative min-h-0 flex-1 overflow-hidden"
+          className="relative mb-[12dvh] min-h-0 flex-1 overflow-hidden"
         >
           {balloons.map((balloon) => (
             <button
