@@ -163,7 +163,14 @@ function FlyingBalloon({
         if (!ready) return;
         onPop(event.currentTarget.getBoundingClientRect());
       }}
-      onAnimationEnd={onEscape}
+      onAnimationEnd={(event) => {
+        if (
+          event.currentTarget !== event.target ||
+          event.animationName !== "balloon-flight"
+        )
+          return;
+        onEscape();
+      }}
       className="absolute bottom-0 block opacity-100 transition-opacity duration-500 will-change-transform disabled:pointer-events-none disabled:opacity-0"
       style={
         {
