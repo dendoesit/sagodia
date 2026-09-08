@@ -164,14 +164,24 @@ button,
   }
 }
 
-/* Starts fully below the bottom edge so balloons drift up into view rather
-   than sitting parked at the bottom where they are awkward to tap. */
-@keyframes rise {
+/* The first frame is a real launch layer below the clipping plane. `both`
+   fill mode on each balloon keeps replacements here during their delay. */
+@keyframes balloon-flight {
   0% {
-    transform: translateY(118%) rotate(0deg);
+    transform: translate3d(
+        0,
+        calc(100% + var(--launch-depth, 100px)),
+        0
+      )
+      rotate(0deg);
   }
   100% {
-    transform: translateY(-125vh) rotate(var(--spin, 8deg));
+    transform: translate3d(
+        var(--drift, 0),
+        calc(-100dvh - 120%),
+        0
+      )
+      rotate(var(--spin, 8deg));
   }
 }
 

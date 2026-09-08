@@ -26,6 +26,12 @@ const BETWEEN_WORDS_MS = 220;
 /** Small hands need a beat after a phrase before another tap can replace it. */
 const AFTER_PHRASE_MS = 280;
 
+type QueuedSpeech = {
+  parts: string[];
+  options: SpeakOptions;
+};
+let pendingSpeech: QueuedSpeech[] = [];
+
 type WebSpeechWindow = Window & {
   speechSynthesis?: SpeechSynthesis;
   SpeechSynthesisUtterance?: typeof SpeechSynthesisUtterance;
@@ -249,6 +255,20 @@ function speakBatch(parts: string[], options: SpeakOptions = {}) {
   else next();
 }
 
+function playNextQueued() {
+  if (busy) return;
+  const queued = pendingSpeech.shift();
+  if (!queued) return;
+  const { onEnd, ...options } = queued.options;
+  speakBatch(queued.parts, {
+    ...options,
+    onEnd: () => {
+      onEnd?.();
+      playNextQueued();
+    },
+  });
+}
+
 export function initSpeech() {
   if (typeof window === "undefined") return;
   ensureMedia();
@@ -291,6 +311,7 @@ export function subscribeSpeechBusy(listener: () => void) {
 }
 
 export function speak(text: string, options: SpeakOptions = {}) {
+  pendingSpeech = [];
   speakBatch([text], options);
 }
 
@@ -298,7 +319,21 @@ export function speakSequence(
   parts: string[],
   options: SpeakOptions = {},
 ) {
+  pendingSpeech = [];
   speakBatch(parts, options);
+}
+
+/**
+ * Add a phrase behind any speech already playing. Balloon counting uses this
+ * so every pop is pronounced in order instead of interrupting the number
+ * before it.
+ */
+export function enqueueSpeech(
+  parts: string[],
+  options: SpeakOptions = {},
+) {
+  pendingSpeech.push({ parts, options });
+  playNextQueued();
 }
 
 export function speakExclusive(
@@ -316,11 +351,13 @@ export function speakTapped(
   options: SpeakOptions = {},
 ): boolean {
   if (busy) return false;
+  pendingSpeech = [];
   speakBatch(parts, options);
   return true;
 }
 
 export function stopSpeaking() {
+  pendingSpeech = [];
   batchId += 1;
   if (typeof window !== "undefined") clearCurrent();
   setBusy(false);

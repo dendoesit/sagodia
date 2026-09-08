@@ -4,16 +4,17 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Celebration } from "@/components/ui/Celebration";
 import { PlaceFrame } from "@/components/ui/PlaceFrame";
 import {
+  enqueueSpeech,
   sfxFanfare,
   sfxMiss,
   sfxPop,
-  speakExclusive,
+  stopSpeaking,
   vibrate,
 } from "@/lib/audio";
 import { numberWord } from "@/lib/content";
 import { useSettings } from "@/lib/settings";
 
-const BALLOON_COLORS = [
+const COLORS = [
   "#E4574C",
   "#4F8FE0",
   "#FFD22E",
@@ -23,46 +24,55 @@ const BALLOON_COLORS = [
   "#4FC3B4",
   "#F79420",
 ];
-
-/** One row of dots per ten pops, so the counter reads as progress, not a cap. */
-const STEP = 10;
-const SLOTS = 5;
+const SLOTS = 6;
+const MILESTONE = 10;
 
 type Balloon = {
-  key: number;
+  id: number;
+  slot: number;
   left: number;
   color: string;
+  size: number;
   duration: number;
   delay: number;
+  launchDepth: number;
+  drift: number;
   spin: number;
-  size: number;
-  /** Escaping does not cost anything: true for the balloons already mid-air
-   *  when the game opens, which nobody had a fair chance to pop. */
+  /** Initial balloons may already be near the top when the game opens. */
   grace: boolean;
 };
 
-let nextKey = 1;
+type Burst = {
+  id: number;
+  x: number;
+  y: number;
+  color: string;
+};
+
+let nextId = 1;
 
 /**
- * `spread` gives the first batch a negative delay so the balloons are already
- * scattered up the screen when the child arrives, instead of piled at the
- * bottom waiting to launch.
+ * Six independent launch lanes keep balloons spread out without making their
+ * motion predictable. A replacement waits in an 80–180 px off-screen layer;
+ * animation-fill-mode: both keeps it there throughout its delay.
  */
-function makeBalloon(index: number, spread = false): Balloon {
-  // Slow: a missed balloon now resets the count, so every balloon has to be
-  // reachable by a three-year-old who spots it late.
-  const duration = 13 + Math.random() * 7;
+function createBalloon(slot: number, initial = false): Balloon {
+  const duration = 12 + Math.random() * 5;
+  const lane = (slot * 31 + Math.random() * 8) % 82;
   return {
-    key: nextKey++,
-    // Stride 29 keeps consecutive slots apart, so the staggered start does not
-    // line the balloons up in a diagonal.
-    left: 3 + ((index * 29 + Math.random() * 10) % 78),
-    color: BALLOON_COLORS[Math.floor(Math.random() * BALLOON_COLORS.length)],
+    id: nextId++,
+    slot,
+    left: 2 + lane,
+    color: COLORS[Math.floor(Math.random() * COLORS.length)],
+    size: 20 + Math.random() * 7,
     duration,
-    delay: spread ? -(index / SLOTS) * duration : Math.random() * 1.5,
-    spin: (Math.random() - 0.5) * 24,
-    size: 20 + Math.random() * 8,
-    grace: spread,
+    delay: initial
+      ? -(slot / SLOTS) * duration * 0.78
+      : 0.65 + Math.random() * 1.25,
+    launchDepth: 80 + Math.random() * 100,
+    drift: (Math.random() - 0.5) * 18,
+    spin: (Math.random() - 0.5) * 22,
+    grace: initial,
   };
 }
 
@@ -96,7 +106,14 @@ function BalloonArt({ color }: { color: string }) {
         strokeWidth={2}
         strokeLinejoin="round"
       />
-      <ellipse cx={34} cy={34} rx={11} ry={15} fill="#FFFFFF" opacity={0.45} />
+      <ellipse
+        cx={34}
+        cy={34}
+        rx={11}
+        ry={15}
+        fill="#FFFFFF"
+        opacity={0.45}
+      />
       <circle cx={38} cy={52} r={5} fill="#2F2A26" />
       <circle cx={62} cy={52} r={5} fill="#2F2A26" />
       <path
@@ -112,89 +129,108 @@ function BalloonArt({ color }: { color: string }) {
 
 export function BalloonGame({ onHome }: { onHome: () => void }) {
   const { showWords } = useSettings();
-  const [balloons, setBalloons] = useState<Balloon[]>(() =>
-    Array.from({ length: SLOTS }, (_, i) => makeBalloon(i, true)),
+  const [balloons, setBalloons] = useState(() =>
+    Array.from({ length: SLOTS }, (_, slot) =>
+      createBalloon(slot, true),
+    ),
   );
-  const [bursts, setBursts] = useState<
-    { key: number; x: number; y: number; color: string }[]
-  >([]);
+  const [bursts, setBursts] = useState<Burst[]>([]);
   const [count, setCount] = useState(0);
   const [best, setBest] = useState(0);
   const [missed, setMissed] = useState(0);
   const [party, setParty] = useState(0);
+
+  const countRef = useRef(0);
+  const popping = useRef(new Set<number>());
   const burstTimers = useRef<number[]>([]);
 
   useEffect(
-    () => () => burstTimers.current.forEach((id) => window.clearTimeout(id)),
+    () => () => {
+      burstTimers.current.forEach((timer) => window.clearTimeout(timer));
+      stopSpeaking();
+    },
     [],
   );
 
-  const replace = useCallback((key: number, index: number) => {
+  const replace = useCallback((id: number, slot: number) => {
     setBalloons((current) =>
       current.map((balloon) =>
-        balloon.key === key ? makeBalloon(index) : balloon,
+        balloon.id === id ? createBalloon(slot) : balloon,
       ),
     );
   }, []);
 
-  const pop = (balloon: Balloon, index: number, rect: DOMRect) => {
-    const next = count + 1;
-    const word = numberWord(next);
-    const milestone = next % STEP === 0;
-    // Narration may skip a number when the child pops very quickly, but play
-    // never freezes behind the voice. The old early return made every balloon
-    // ignore taps until the previous number had finished.
-    speakExclusive(
-      milestone ? [`${word}!`, "Wow!"] : [word],
-    );
+  const pop = (balloon: Balloon, rect: DOMRect) => {
+    if (popping.current.has(balloon.id)) return;
+    popping.current.add(balloon.id);
 
-    sfxPop();
-    vibrate(20);
-    if (milestone) {
-      sfxFanfare();
-      setParty((n) => n + 1);
-    }
+    const next = countRef.current + 1;
+    countRef.current = next;
     setCount(next);
     setBest((current) => Math.max(current, next));
 
-    setBursts((current) => [
-      ...current,
-      {
-        key: balloon.key,
-        x: rect.left + rect.width / 2,
-        y: rect.top + rect.height / 2,
-        color: balloon.color,
-      },
-    ]);
+    // FIFO narration: even three quick pops are spoken as one, two, three.
+    enqueueSpeech([numberWord(next)], { rate: 1.08 });
+    sfxPop();
+    vibrate(20);
+
+    if (next % MILESTONE === 0) {
+      sfxFanfare();
+      setParty((current) => current + 1);
+    }
+
+    const burst: Burst = {
+      id: balloon.id,
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
+      color: balloon.color,
+    };
+    setBursts((current) => [...current, burst]);
     burstTimers.current.push(
-      window.setTimeout(
-        () => setBursts((current) => current.filter((b) => b.key !== balloon.key)),
-        520,
-      ),
+      window.setTimeout(() => {
+        setBursts((current) =>
+          current.filter((item) => item.id !== burst.id),
+        );
+      }, 520),
     );
 
-    replace(balloon.key, index);
+    replace(balloon.id, balloon.slot);
   };
 
-  /** A balloon reaching the top ends the streak and starts the count over. */
-  const escape = (balloon: Balloon, index: number) => {
-    replace(balloon.key, index);
-    if (balloon.grace) return;
-    if (count > 0) {
-      sfxMiss();
-      setMissed((n) => n + 1);
-      speakExclusive(count >= 5 ? ["Oh! Let's count again."] : ["Try again!"]);
-    }
+  const escape = (balloon: Balloon) => {
+    replace(balloon.id, balloon.slot);
+    if (balloon.grace || countRef.current === 0) return;
+
+    // A miss starts a new counting sequence. Old queued numbers are cleared so
+    // they cannot continue after the visible counter has returned to zero.
+    stopSpeaking();
+    sfxMiss();
+    countRef.current = 0;
     setCount(0);
+    setMissed((current) => current + 1);
   };
 
-  const dots = count === 0 ? 0 : count % STEP === 0 ? STEP : count % STEP;
+  const dots =
+    count === 0
+      ? 0
+      : count % MILESTONE === 0
+        ? MILESTONE
+        : count % MILESTONE;
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-linear-to-b from-[#BFF0EA] to-[#2FA9A0]">
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute left-[8%] top-[12%] h-14 w-28 rounded-full bg-white/60 blur-[2px]" />
-        <div className="absolute right-[12%] top-[26%] h-10 w-24 rounded-full bg-white/50 blur-[2px]" />
+        <div className="absolute -right-8 top-[9%] h-32 w-32 rounded-full bg-[#FFE27A]/75" />
+        <div className="absolute left-[7%] top-[17%] h-12 w-28 rounded-full bg-white/60 blur-[2px]" />
+        <div className="absolute right-[14%] top-[34%] h-10 w-24 rounded-full bg-white/50 blur-[2px]" />
+        <svg
+          viewBox="0 0 100 30"
+          preserveAspectRatio="none"
+          className="absolute inset-x-0 bottom-0 h-[14%] w-full opacity-40"
+          aria-hidden
+        >
+          <path d="M0 24 Q20 8 42 22 T100 16 V30 H0 Z" fill="#137E76" />
+        </svg>
       </div>
 
       <PlaceFrame
@@ -204,7 +240,9 @@ export function BalloonGame({ onHome }: { onHome: () => void }) {
             <span
               key={`${count}-${missed}`}
               className={`text-3xl font-bold tabular-nums sm:text-4xl ${
-                count === 0 && missed > 0 ? "anim-wiggle text-[#E4574C]" : ""
+                count === 0 && missed > 0
+                  ? "anim-wiggle text-[#E4574C]"
+                  : ""
               }`}
             >
               {count}
@@ -218,18 +256,24 @@ export function BalloonGame({ onHome }: { onHome: () => void }) {
               </span>
             ) : null}
             <span className="flex flex-nowrap gap-0.5 sm:gap-1">
-              {Array.from({ length: STEP }, (_, i) => (
+              {Array.from({ length: MILESTONE }, (_, index) => (
                 <span
-                  key={i}
+                  key={index}
                   className={`h-2.5 w-2.5 rounded-full transition-colors sm:h-4 sm:w-4 ${
-                    i < dots ? "bg-[#F79420]" : "bg-[#2F2A26]/15"
+                    index < dots
+                      ? "bg-[#F79420]"
+                      : "bg-[#2F2A26]/15"
                   }`}
                 />
               ))}
             </span>
             {best > 0 ? (
               <span className="flex items-center gap-0.5 text-base font-bold text-[#F79420] tabular-nums sm:text-xl">
-                <svg viewBox="0 0 24 24" className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden>
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-4 w-4 sm:h-5 sm:w-5"
+                  aria-hidden
+                >
                   <path
                     d="M12 2.6 L14.9 9 L21.6 9.7 L16.6 14.2 L18 20.8 L12 17.4 L6 20.8 L7.4 14.2 L2.4 9.7 L9.1 9 Z"
                     fill="#F79420"
@@ -241,24 +285,38 @@ export function BalloonGame({ onHome }: { onHome: () => void }) {
           </div>
         }
       >
-        <div className="relative min-h-0 flex-1">
-          {balloons.map((balloon, index) => (
+        {/* Everything below this clipping plane is a non-interactive launch
+          layer. New balloons wait there, then rise into the play area. */}
+        <div
+          data-balloon-field
+          className="relative min-h-0 flex-1 overflow-hidden"
+        >
+          {balloons.map((balloon) => (
             <button
-              key={balloon.key}
+              key={balloon.id}
               type="button"
-              aria-label="Pop the balloon"
+              aria-label="Pop balloon"
               onPointerDown={(event) => {
                 event.preventDefault();
-                pop(balloon, index, event.currentTarget.getBoundingClientRect());
+                pop(
+                  balloon,
+                  event.currentTarget.getBoundingClientRect(),
+                );
               }}
-              onAnimationEnd={() => escape(balloon, index)}
-              className="absolute bottom-0 block"
+              onAnimationEnd={() => escape(balloon)}
+              className="absolute bottom-0 block will-change-transform"
               style={
                 {
                   left: `${balloon.left}%`,
                   width: `${balloon.size}vmin`,
                   height: `${balloon.size * 1.4}vmin`,
-                  animation: `rise ${balloon.duration}s linear ${balloon.delay}s forwards`,
+                  animationName: "balloon-flight",
+                  animationDuration: `${balloon.duration}s`,
+                  animationDelay: `${balloon.delay}s`,
+                  animationTimingFunction: "linear",
+                  animationFillMode: "both",
+                  "--launch-depth": `${balloon.launchDepth}px`,
+                  "--drift": `${balloon.drift}vw`,
                   "--spin": `${balloon.spin}deg`,
                 } as React.CSSProperties
               }
@@ -271,7 +329,7 @@ export function BalloonGame({ onHome }: { onHome: () => void }) {
 
       {bursts.map((burst) => (
         <span
-          key={burst.key}
+          key={burst.id}
           className="anim-burst pointer-events-none fixed z-40 block h-16 w-16 rounded-full"
           style={{
             left: burst.x - 32,

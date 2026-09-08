@@ -7,6 +7,7 @@ import {
 } from "@/lib/speech";
 
 export {
+  enqueueSpeech,
   isSpeaking,
   isSpeechBusy,
   speak,
