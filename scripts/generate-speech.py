@@ -71,7 +71,7 @@ NUMBERS = [
     "Eighteen",
     "Nineteen",
     "Twenty",
-]
+] + [str(value) for value in range(21, 101)]
 PLACES = [
     "The farm. Tap an animal!",
     "The kitchen. Feed Munchy!",
