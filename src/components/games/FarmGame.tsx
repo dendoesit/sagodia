@@ -13,7 +13,12 @@ import {
   vibrate,
 } from "@/lib/audio";
 import { ANIMALS, type AnimalWord } from "@/lib/content";
+import {
+  isRecognitionSupported,
+  warmRecognitionPermission,
+} from "@/lib/pronunciation";
 import { useFindChallenge } from "@/lib/useFindChallenge";
+import { useSettings } from "@/lib/settings";
 import { primeVoiceInput } from "@/lib/useVoiceListener";
 
 const SAY_ITEMS: SayItem[] = ANIMALS.map((animal) => ({
@@ -60,6 +65,7 @@ function AnimalTile({
 
 export function FarmGame({ onHome }: { onHome: () => void }) {
   const { bubble, showWord } = useWordBubble();
+  const { checkPronunciation } = useSettings();
   const challenge = useFindChallenge(ANIMALS, {
     voice: (animal) => [animal.sound],
     question: (word) => `Touch the ${word}!`,
@@ -78,7 +84,13 @@ export function FarmGame({ onHome }: { onHome: () => void }) {
     }
     const selected =
       SAY_ITEMS.find((item) => item.id === animal.id) ?? SAY_ITEMS[0];
-    void primeVoiceInput();
+    // Strict browser recognition must own the microphone by itself on WebKit.
+    // Free-attempt mode keeps the local volume listener.
+    if (checkPronunciation && isRecognitionSupported()) {
+      void warmRecognitionPermission();
+    } else if (!checkPronunciation) {
+      void primeVoiceInput();
+    }
     setSayItem(selected);
     setSaying(true);
     // Starts synchronously in the animal tap. SayAlong then waits for this
@@ -124,6 +136,11 @@ export function FarmGame({ onHome }: { onHome: () => void }) {
             items={SAY_ITEMS}
             first={sayItem}
             promptAlreadyPlaying
+            onHome={() => {
+              stopSpeaking();
+              setSaying(false);
+              onHome();
+            }}
             onExit={() => {
               stopSpeaking();
               setSaying(false);

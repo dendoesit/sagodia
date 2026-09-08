@@ -15,6 +15,8 @@ export type SpeakOptions = {
 let muted = false;
 let speechRate = 1;
 let media: HTMLAudioElement | null = null;
+let speechContext: AudioContext | null = null;
+let activeSource: AudioBufferSourceNode | null = null;
 let activeUtterance: SpeechSynthesisUtterance | null = null;
 let timer: number | undefined;
 let batchId = 0;
@@ -31,10 +33,12 @@ type QueuedSpeech = {
   options: SpeakOptions;
 };
 let pendingSpeech: QueuedSpeech[] = [];
+const bufferCache = new Map<string, Promise<AudioBuffer>>();
 
 type WebSpeechWindow = Window & {
   speechSynthesis?: SpeechSynthesis;
   SpeechSynthesisUtterance?: typeof SpeechSynthesisUtterance;
+  webkitAudioContext?: typeof AudioContext;
 };
 
 function hasWebSpeech(): boolean {
@@ -68,6 +72,38 @@ function ensureMedia(): HTMLAudioElement | null {
   return media;
 }
 
+function ensureSpeechContext(): AudioContext | null {
+  if (typeof window === "undefined") return null;
+  if (!speechContext) {
+    const Constructor =
+      window.AudioContext ??
+      (window as WebSpeechWindow).webkitAudioContext;
+    if (!Constructor) return null;
+    speechContext = new Constructor();
+  }
+  return speechContext;
+}
+
+function loadBuffer(
+  context: AudioContext,
+  src: string,
+): Promise<AudioBuffer> {
+  const cached = bufferCache.get(src);
+  if (cached) return cached;
+  const loading = fetch(src)
+    .then((response) => {
+      if (!response.ok) throw new Error(`Speech clip ${response.status}`);
+      return response.arrayBuffer();
+    })
+    .then((data) => context.decodeAudioData(data))
+    .catch((error) => {
+      bufferCache.delete(src);
+      throw error;
+    });
+  bufferCache.set(src, loading);
+  return loading;
+}
+
 function setBusy(value: boolean) {
   if (busy === value) return;
   busy = value;
@@ -76,6 +112,16 @@ function setBusy(value: boolean) {
 
 function clearCurrent() {
   window.clearTimeout(timer);
+  if (activeSource) {
+    activeSource.onended = null;
+    try {
+      activeSource.stop();
+    } catch {
+      /* the source may already have ended */
+    }
+    activeSource.disconnect();
+    activeSource = null;
+  }
   const player = media;
   if (player) {
     player.onended = null;
@@ -154,17 +200,16 @@ function speakWithBrowser(
   window.speechSynthesis.speak(utterance);
 }
 
-function playPart(
+function playWithMedia(
+  src: string,
   text: string,
   rate: number,
   pitch: number,
   id: number,
   done: () => void,
 ) {
-  const src = SPEECH_CLIPS[normalize(text)];
   const player = ensureMedia();
-
-  if (!src || !player) {
+  if (!player) {
     speakWithBrowser(text, rate, pitch, done);
     return;
   }
@@ -174,9 +219,6 @@ function playPart(
   };
   player.onerror = () => {
     if (id !== batchId) return;
-    // The generated file may be unavailable on the first request of a very
-    // stale PWA install. Browser speech keeps that tap useful while the
-    // service worker fetches the fresh asset.
     player.onended = null;
     player.onerror = null;
     speakWithBrowser(text, rate, pitch, done);
@@ -184,9 +226,6 @@ function playPart(
   player.src = src;
   player.playbackRate = Math.max(0.65, Math.min(1.15, speechRate * rate));
   player.volume = 1;
-  // Force source selection before play. Without this, WebKit (and Chromium
-  // after an ended clip) can keep currentSrc pointed at the previous word and
-  // resolve play() without ever requesting the newly assigned file.
   player.load();
 
   const attempt = player.play();
@@ -200,13 +239,59 @@ function playPart(
   }
 }
 
+function playPart(
+  text: string,
+  rate: number,
+  pitch: number,
+  id: number,
+  done: () => void,
+) {
+  const src = SPEECH_CLIPS[normalize(text)];
+  if (!src) {
+    speakWithBrowser(text, rate, pitch, done);
+    return;
+  }
+
+  const context = ensureSpeechContext();
+  if (!context) {
+    playWithMedia(src, text, rate, pitch, id, done);
+    return;
+  }
+
+  void context
+    .resume()
+    .then(() => loadBuffer(context, src))
+    .then((buffer) => {
+      if (id !== batchId) return;
+      const source = context.createBufferSource();
+      source.buffer = buffer;
+      source.playbackRate.value = Math.max(
+        0.65,
+        Math.min(1.15, speechRate * rate),
+      );
+      source.connect(context.destination);
+      source.onended = () => {
+        if (activeSource === source) activeSource = null;
+        source.disconnect();
+        if (id === batchId) done();
+      };
+      activeSource = source;
+      source.start();
+    })
+    .catch(() => {
+      if (id !== batchId) return;
+      // A regular media element remains a last-resort fallback for browsers
+      // without working Web Audio decoding.
+      playWithMedia(src, text, rate, pitch, id, done);
+    });
+}
+
 /**
  * One deterministic queue for both bundled clips and browser-speech fallback.
  *
- * A single reusable <audio> element is important on iOS: once the child has
- * started it with the first tap, later words can use that same unlocked media
- * session. Creating a fresh element for every animal would reintroduce the
- * autoplay failure this module exists to avoid.
+ * Bundled clips use one unlocked Web Audio context. Besides reliable playback,
+ * this avoids the iOS audio-session bug where HTML media playback can leave
+ * SpeechRecognition running without ever returning a result.
  */
 function speakBatch(parts: string[], options: SpeakOptions = {}) {
   const {
@@ -278,8 +363,16 @@ export function initSpeech() {
   }
 }
 
-/** Prepare the reusable media element inside the initial play-button tap. */
+/** Unlock speech playback inside the initial play-button tap. */
 export function unlockSpeech() {
+  const context = ensureSpeechContext();
+  if (context) {
+    void context.resume();
+    const source = context.createBufferSource();
+    source.buffer = context.createBuffer(1, 1, 22050);
+    source.connect(context.destination);
+    source.start();
+  }
   ensureMedia()?.load();
   refreshVoices();
 }
@@ -296,6 +389,7 @@ export function setSpeechRate(value: number) {
 export function isSpeaking(): boolean {
   const mediaSpeaking = Boolean(media && !media.paused && !media.ended);
   return (
+    Boolean(activeSource) ||
     mediaSpeaking ||
     Boolean(hasWebSpeech() && window.speechSynthesis.speaking)
   );

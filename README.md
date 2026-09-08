@@ -42,9 +42,9 @@ Tap Pip the fox in the corner for a greeting, then pick a place:
   Spoken parts have a 220 ms pause between them, so words never collide.
   Fast-action play such as balloon popping stays responsive while every
   number waits in a first-in, first-out speech queue.
-- **Speech starts inside the tap.** A single reusable audio player starts a
-  bundled voice clip synchronously in the gesture that asked for it. This
-  avoids the unreliable `speechSynthesis` timing path on iOS.
+- **Speech uses an unlocked Web Audio context.** Bundled clips avoid both the
+  unreliable `speechSynthesis` timing path and an iOS audio-session conflict
+  that can stall the following pronunciation check.
 - **Small, offline assets.** Characters, food and scenery are hand-written
   SVG. The learning vocabulary is a 2.2 MB library of bundled neural-voice
   clips; browser speech is only a fallback for an unusual dynamic sentence.
@@ -56,11 +56,12 @@ Press **and hold** the gear in the top-right of the town for about a second —
 long enough that a child mashing the screen will not get in. You can mute the
 app, hide the written words and slow the voice down.
 
-After an animal is tapped, local microphone loudness drives the listening
-ring. Pronunciation checking is on by default and uses the browser's speech
-recognition service; only a tolerant match for the displayed animal awards a
-star. It can be disabled in grown-up settings. If recognition is unavailable,
-a large green tick lets a grown-up confirm the attempt manually.
+After an animal is tapped, the listening display shows when it is the
+child's turn. Pronunciation checking is on by default and uses the browser's
+speech recognition service; only a tolerant match for the displayed animal
+awards a star. It can be disabled in grown-up settings. If recognition is
+unavailable or stalls, a large green tick lets a grown-up confirm the attempt
+manually instead of trapping the game.
 
 ## Run it locally
 
@@ -97,15 +98,15 @@ To install it on an iPhone:
 
 iOS refuses to start media unless it begins inside a real user gesture, which
 is why the app opens on a splash screen with one large play button. That tap
-unlocks one reusable audio player. Vocabulary then sounds identical on iOS,
+unlocks the speech audio context. Vocabulary then sounds identical on iOS,
 Android and desktop because it comes from the checked-in voice clips, not the
 device's speech synthesiser. Dynamic sentences without a bundled clip fall
 back to a preferred English device voice.
 
 ## Tech
 
-Next.js (App Router) · TypeScript · Tailwind CSS v4 · HTML Audio · Web Speech
-fallback · Web Audio API · a hand-rolled service worker for offline play.
+Next.js (App Router) · TypeScript · Tailwind CSS v4 · Web Speech · Web Audio
+API · a hand-rolled service worker for offline play.
 
 ```
 src/

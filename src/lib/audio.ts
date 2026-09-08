@@ -41,7 +41,7 @@ export function initAudio() {
   initSpeech();
 }
 
-/** Unlock Web Audio and the reusable speech player in the first real tap. */
+/** Unlock sound effects and speech contexts in the first real tap. */
 export function unlockAudio() {
   const context = getCtx();
   if (context) {

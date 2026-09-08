@@ -7,6 +7,10 @@
  */
 
 type Listener = { transcript: string; isFinal: boolean };
+type RecognitionDone = {
+  heardSpeech: boolean;
+  error?: string;
+};
 
 interface RecognitionEventLike {
   resultIndex: number;
@@ -31,6 +35,7 @@ interface RecognitionLike {
 }
 
 type RecognitionConstructor = new () => RecognitionLike;
+let sharedRecognition: RecognitionLike | null = null;
 
 declare global {
   interface Window {
@@ -39,9 +44,33 @@ declare global {
   }
 }
 
+let permissionWarmup: Promise<boolean> | null = null;
+
 export function isRecognitionSupported(): boolean {
   if (typeof window === "undefined") return false;
   return Boolean(window.SpeechRecognition ?? window.webkitSpeechRecognition);
+}
+
+/**
+ * Ask for microphone permission in the animal tap, then release the warm-up
+ * stream before WebKit recognition takes ownership of the audio session.
+ */
+export function warmRecognitionPermission(): Promise<boolean> {
+  if (
+    typeof navigator === "undefined" ||
+    !navigator.mediaDevices?.getUserMedia
+  )
+    return Promise.resolve(false);
+  if (permissionWarmup) return permissionWarmup;
+
+  permissionWarmup = navigator.mediaDevices
+    .getUserMedia({ audio: true })
+    .then((stream) => {
+      stream.getTracks().forEach((track) => track.stop());
+      return true;
+    })
+    .catch(() => false);
+  return permissionWarmup;
 }
 
 function normalize(value: string): string {
@@ -91,7 +120,7 @@ export function matchesWord(transcript: string, target: string): boolean {
  */
 export function listenForWord(
   onHeard: (result: Listener) => void,
-  onDone?: (heardSpeech: boolean) => void,
+  onDone?: (result: RecognitionDone) => void,
 ): (() => void) | null {
   const Recognition = window.SpeechRecognition ?? window.webkitSpeechRecognition;
   if (!Recognition) return null;
@@ -100,7 +129,8 @@ export function listenForWord(
   let heardSpeech = false;
   let recognition: RecognitionLike;
   try {
-    recognition = new Recognition();
+    recognition = sharedRecognition ?? new Recognition();
+    sharedRecognition = recognition;
   } catch {
     return null;
   }
@@ -119,20 +149,21 @@ export function listenForWord(
       }
     }
   };
-  recognition.onerror = () => {
+  recognition.onerror = (event) => {
     if (stopped) return;
     stopped = true;
-    onDone?.(heardSpeech);
+    onDone?.({ heardSpeech, error: event.error });
   };
   recognition.onend = () => {
     if (stopped) return;
     stopped = true;
-    onDone?.(heardSpeech);
+    onDone?.({ heardSpeech });
   };
 
   try {
     recognition.start();
   } catch {
+    sharedRecognition = null;
     return null;
   }
 

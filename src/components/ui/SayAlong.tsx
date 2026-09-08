@@ -1,22 +1,25 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { StarGlyph } from "@/components/art/friends";
+import { HomeGlyph, StarGlyph } from "@/components/art/friends";
 import { Celebration } from "@/components/ui/Celebration";
+import { RoundButton } from "@/components/ui/PlaceFrame";
 import {
   sfxFanfare,
   sfxSparkle,
   sfxSuccess,
   isSpeechBusy,
   speak,
+  stopSpeaking,
   subscribeSpeechBusy,
   vibrate,
 } from "@/lib/audio";
-import { pickRandom, randomCheer } from "@/lib/content";
+import { pickRandom } from "@/lib/content";
 import {
   isRecognitionSupported,
   listenForWord,
   matchesWord,
+  warmRecognitionPermission,
 } from "@/lib/pronunciation";
 import { useSettings } from "@/lib/settings";
 import { useVoiceListener } from "@/lib/useVoiceListener";
@@ -47,22 +50,26 @@ export function SayAlong({
   items,
   first,
   promptAlreadyPlaying = false,
+  onHome,
   onExit,
 }: {
   items: SayItem[];
   first: SayItem;
   promptAlreadyPlaying?: boolean;
+  onHome: () => void;
   onExit: () => void;
 }) {
   const { checkPronunciation, showWords } = useSettings();
   const recognitionSupported = isRecognitionSupported();
-  const strictChecking = checkPronunciation && recognitionSupported;
   const [item, setItem] = useState(first);
   const [phase, setPhase] = useState<Phase>("prompt");
   const [micReady, setMicReady] = useState(false);
+  const [recognitionFailed, setRecognitionFailed] = useState(false);
   const [stars, setStars] = useState(0);
   const [cheer, setCheer] = useState(0);
   const [party, setParty] = useState(0);
+  const strictChecking =
+    checkPronunciation && recognitionSupported && !recognitionFailed;
 
   const ringRef = useRef<HTMLDivElement>(null);
   const meterRef = useRef<HTMLDivElement>(null);
@@ -72,6 +79,7 @@ export function SayAlong({
   const stopRecognition = useRef<(() => void) | null>(null);
   const stopBusySubscription = useRef<(() => void) | null>(null);
   const matched = useRef(false);
+  const emptyRecognitionAttempts = useRef(0);
   const alive = useRef(true);
   /** Breaks the cycle: presenting listens, and listening presents the next one. */
   const presentRef = useRef<(next: SayItem) => void>(() => {});
@@ -123,12 +131,10 @@ export function SayAlong({
     if (full) {
       sfxFanfare();
       setParty((n) => n + 1);
-      speak(`${wasPerfect ? "Perfect" : "Well done"}! ${word.word}! Five stars!`);
-    } else {
-      speak(
-        wasPerfect ? `Perfect! ${word.word}!` : `${randomCheer()} ${word.word}!`,
-      );
     }
+    // Keep the success reply on the bundled Web Audio path. Dynamic browser
+    // speech can leave iOS recognition unable to start the next round.
+    speak(word.word);
 
     timers.current.push(
       window.setTimeout(
@@ -148,10 +154,39 @@ export function SayAlong({
     if (!checkPronunciation) heard();
   }, [checkPronunciation, heard]);
 
-  const { arm, disarm, start: startMic } = useVoiceListener({
+  const {
+    arm,
+    disarm,
+    start: startMic,
+    stop: stopMic,
+  } = useVoiceListener({
     onFrame: paintLevel,
     onSpeech: registerAttempt,
   });
+
+  const leave = useCallback(
+    (goHome: boolean) => {
+      if (!alive.current) return;
+      alive.current = false;
+      clearTimers();
+      endRecognition();
+      stopBusySubscription.current?.();
+      stopBusySubscription.current = null;
+      disarm();
+      stopMic();
+      stopSpeaking();
+      if (goHome) onHome();
+      else onExit();
+    },
+    [
+      clearTimers,
+      disarm,
+      endRecognition,
+      onExit,
+      onHome,
+      stopMic,
+    ],
+  );
 
   const beginListening = useCallback(() => {
     if (!alive.current || phaseRef.current === "cheer") return;
@@ -166,13 +201,13 @@ export function SayAlong({
     arm();
 
     if (strictChecking) {
-      stopRecognition.current = listenForWord(
+      const stop = listenForWord(
         ({ transcript }) => {
           if (!matchesWord(transcript, word.word)) return;
           matched.current = true;
           heard();
         },
-        (heardSpeech) => {
+        ({ heardSpeech, error }) => {
           stopRecognition.current = null;
           if (
             !alive.current ||
@@ -180,6 +215,25 @@ export function SayAlong({
             matched.current
           )
             return;
+
+          if (error && error !== "no-speech" && error !== "aborted") {
+            disarm();
+            setRecognitionFailed(true);
+            setMicReady(false);
+            return;
+          }
+
+          if (!heardSpeech) {
+            emptyRecognitionAttempts.current += 1;
+            if (emptyRecognitionAttempts.current >= 2) {
+              disarm();
+              setRecognitionFailed(true);
+              setMicReady(false);
+              return;
+            }
+          } else {
+            emptyRecognitionAttempts.current = 0;
+          }
 
           let restarted = false;
           const restart = () => {
@@ -195,24 +249,25 @@ export function SayAlong({
           }
         },
       );
+      if (!stop) {
+        disarm();
+        setRecognitionFailed(true);
+        setMicReady(false);
+        return;
+      }
+      stopRecognition.current = stop;
     }
 
     timers.current.push(
       window.setTimeout(() => {
         if (!alive.current || phaseRef.current !== "listening") return;
         if (strictChecking) {
+          // Stable iOS releases can leave recognition alive without result,
+          // error, or end events. Never trap the child in that state.
           endRecognition();
           disarm();
-          let restarted = false;
-          const restart = () => {
-            if (restarted || !alive.current) return;
-            restarted = true;
-            beginListeningRef.current();
-          };
-          speak(word.word, { rate: 0.85, onEnd: restart });
-          timers.current.push(
-            window.setTimeout(restart, PROMPT_FALLBACK_MS),
-          );
+          setRecognitionFailed(true);
+          setMicReady(false);
         } else {
           speak(word.word, { rate: 0.85 });
           arm();
@@ -234,6 +289,7 @@ export function SayAlong({
       endRecognition();
       disarm();
       itemRef.current = next;
+      emptyRecognitionAttempts.current = 0;
       setItem(next);
       phaseRef.current = "prompt";
       setPhase("prompt");
@@ -281,13 +337,25 @@ export function SayAlong({
     if (kickoff.current) return;
     kickoff.current = true;
     void (async () => {
-      const ok = await startMic();
+      // Browser recognition owns the microphone in strict mode. Opening a
+      // second getUserMedia stream at the same time stalls WebKit recognition.
+      const ok = checkPronunciation
+        ? strictChecking && (await warmRecognitionPermission())
+        : await startMic();
       if (!alive.current) return;
+      if (checkPronunciation && !ok) setRecognitionFailed(true);
       setMicReady(ok);
       if (promptAlreadyPlaying) listenAfterCurrentPrompt();
       else presentRef.current(first);
     })();
-  }, [first, listenAfterCurrentPrompt, promptAlreadyPlaying, startMic]);
+  }, [
+    checkPronunciation,
+    first,
+    listenAfterCurrentPrompt,
+    promptAlreadyPlaying,
+    startMic,
+    strictChecking,
+  ]);
 
   useEffect(() => {
     alive.current = true;
@@ -301,11 +369,30 @@ export function SayAlong({
 
   const Art = item.Art;
   const listening = phase === "listening";
+  const manualConfirmation =
+    checkPronunciation && (!recognitionSupported || recognitionFailed);
   const automaticListening =
-    micReady && (!checkPronunciation || recognitionSupported);
+    micReady &&
+    (!checkPronunciation || (recognitionSupported && !recognitionFailed));
 
   return (
-    <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#2F2A26]/55 px-4 pb-4 pt-[5rem] backdrop-blur-[3px] sm:pt-[5.75rem]">
+    <div className="absolute inset-0 z-40 flex items-center justify-center bg-[#2F2A26]/55 px-4 pb-4 pt-[5rem] backdrop-blur-[3px] sm:pt-[5.75rem]">
+      <div className="absolute inset-x-0 top-0 z-50 flex items-start justify-between p-3">
+        <RoundButton label="Back to town" onPress={() => leave(true)}>
+          <HomeGlyph className="h-7 w-7 sm:h-8 sm:w-8" />
+        </RoundButton>
+        <RoundButton label="Stop saying words" onPress={() => leave(false)}>
+          <svg viewBox="0 0 100 100" className="h-6 w-6" aria-hidden>
+            <path
+              d="M26 26 L74 74 M74 26 L26 74"
+              stroke="#FFFFFF"
+              strokeWidth={12}
+              strokeLinecap="round"
+            />
+          </svg>
+        </RoundButton>
+      </div>
+
       <div className="flex w-full max-w-3xl flex-col items-center justify-center gap-4 landscape:flex-row landscape:gap-8">
         <div className="relative grid aspect-square w-[min(64vw,32dvh)] shrink-0 place-items-center landscape:w-[min(38vw,54dvh)]">
           <div
@@ -400,7 +487,7 @@ export function SayAlong({
             {phase === "prompt"
               ? "Listen…"
               : listening
-                ? checkPronunciation && !recognitionSupported
+                ? manualConfirmation
                   ? "Ask a grown-up!"
                   : "Your turn!"
                 : "Yes!"}
@@ -418,24 +505,6 @@ export function SayAlong({
             ))}
           </div>
 
-          <button
-            type="button"
-            aria-label="Stop saying words"
-            onPointerDown={(event) => {
-              event.preventDefault();
-              onExit();
-            }}
-            className="mt-1 grid h-12 w-12 place-items-center rounded-full border-4 border-white/70 bg-white/20 transition-transform active:scale-90"
-          >
-            <svg viewBox="0 0 100 100" className="h-6 w-6" aria-hidden>
-              <path
-                d="M26 26 L74 74 M74 26 L26 74"
-                stroke="#FFFFFF"
-                strokeWidth={12}
-                strokeLinecap="round"
-              />
-            </svg>
-          </button>
         </div>
       </div>
 
