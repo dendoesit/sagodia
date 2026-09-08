@@ -14,6 +14,10 @@ import {
   vibrate,
 } from "@/lib/audio";
 import { FOODS, type FoodWord, pickRandom } from "@/lib/content";
+import {
+  foodWithArticle,
+  getKitchenRequest,
+} from "@/lib/kitchenRequest";
 import { useSpeechBusy } from "@/lib/useSpeechBusy";
 
 type Flight = {
@@ -106,16 +110,10 @@ function FoodTile({
   );
 }
 
-function withArticle(word: string): string {
-  const lower = word.toLowerCase();
-  if (lower === "broccoli" || lower === "grapes") return `some ${lower}`;
-  return `${/^[aeiou]/.test(lower) ? "an" : "a"} ${lower}`;
-}
-
 export function KitchenGame({ onHome }: { onHome: () => void }) {
   const { showWord } = useWordBubble();
   const speechBusy = useSpeechBusy();
-  const [wanted, setWanted] = useState(() => pickRandom(FOODS));
+  const [wanted, setWanted] = useState(getKitchenRequest);
   const [flights, setFlights] = useState<Flight[]>([]);
   const [mouth, setMouth] = useState<MunchyMouth>("smile");
   const [wrong, setWrong] = useState(false);
@@ -224,7 +222,7 @@ export function KitchenGame({ onHome }: { onHome: () => void }) {
         prompt={
           <span className="flex items-center gap-2">
             <WantedArt className="h-9 w-9" title={wanted.word} />
-            <span>Munchie wants {withArticle(wanted.word)}.</span>
+            <span>Munchie wants {foodWithArticle(wanted.word)}.</span>
           </span>
         }
       >
@@ -233,12 +231,12 @@ export function KitchenGame({ onHome }: { onHome: () => void }) {
             <button
               type="button"
               ref={munchyRef}
-              aria-label={`Munchie wants ${withArticle(wanted.word)}`}
+              aria-label={`Munchie wants ${foodWithArticle(wanted.word)}`}
               disabled={speechBusy}
               onPointerDown={(event) => {
                 event.preventDefault();
                 speakTapped(`munchie-${wanted.id}`, [
-                  `Munchie wants ${withArticle(wanted.word)}.`,
+                  `Munchie wants ${foodWithArticle(wanted.word)}.`,
                 ]);
               }}
               className={`aspect-square h-full max-h-full max-w-full ${

@@ -9,8 +9,12 @@ import { KitchenGame } from "@/components/games/KitchenGame";
 import { PaintGame } from "@/components/games/PaintGame";
 import { ShapesGame } from "@/components/games/ShapesGame";
 import { TrainGame } from "@/components/games/TrainGame";
-import { initAudio, stopSpeaking } from "@/lib/audio";
+import { initAudio, speak, stopSpeaking } from "@/lib/audio";
 import type { PlaceId } from "@/lib/content";
+import {
+  chooseKitchenRequest,
+  foodWithArticle,
+} from "@/lib/kitchenRequest";
 import { hydrateSettings } from "@/lib/settings";
 
 const GAMES: Record<PlaceId, React.ComponentType<{ onHome: () => void }>> = {
@@ -57,6 +61,15 @@ export function Game() {
     setPlace(null);
   };
 
+  const openPlace = (next: PlaceId) => {
+    stopSpeaking();
+    if (next === "kitchen") {
+      const request = chooseKitchenRequest();
+      speak(`Munchie wants ${foodWithArticle(request.word)}.`);
+    }
+    setPlace(next);
+  };
+
   const Active = place ? GAMES[place] : null;
 
   return (
@@ -68,7 +81,7 @@ export function Game() {
           <Active onHome={goHome} />
         </div>
       ) : (
-        <HubWorld onOpen={setPlace} />
+        <HubWorld onOpen={openPlace} />
       )}
     </main>
   );
