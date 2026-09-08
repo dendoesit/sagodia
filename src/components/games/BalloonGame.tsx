@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Celebration } from "@/components/ui/Celebration";
 import { PlaceFrame } from "@/components/ui/PlaceFrame";
 import {
-  enqueueSpeech,
+  enqueueLatestSpeech,
   sfxFanfare,
   sfxMiss,
   sfxPop,
@@ -28,7 +28,6 @@ const SLOTS = 6;
 const MILESTONE = 10;
 const RESPAWN_MIN_MS = 900;
 const RESPAWN_JITTER_MS = 700;
-const INTERACTIVE_PROGRESS = 0.28;
 
 type Balloon = {
   id: number;
@@ -139,28 +138,12 @@ function FlyingBalloon({
   onPop: (rect: DOMRect) => void;
   onEscape: () => void;
 }) {
-  const elapsedMs = Math.max(0, -balloon.delay * 1000);
-  const armAfterMs = Math.max(
-    0,
-    balloon.duration * 1000 * INTERACTIVE_PROGRESS - elapsedMs,
-  );
-  const [ready, setReady] = useState(armAfterMs === 0);
-
-  useEffect(() => {
-    if (armAfterMs === 0) return;
-    const timer = window.setTimeout(() => setReady(true), armAfterMs);
-    return () => window.clearTimeout(timer);
-  }, [armAfterMs]);
-
   return (
     <button
       type="button"
-      aria-label={ready ? "Pop balloon" : "Balloon rising"}
-      disabled={!ready}
-      data-balloon-ready={ready ? "true" : "false"}
+      aria-label="Pop balloon"
       onPointerDown={(event) => {
         event.preventDefault();
-        if (!ready) return;
         onPop(event.currentTarget.getBoundingClientRect());
       }}
       onAnimationEnd={(event) => {
@@ -171,7 +154,7 @@ function FlyingBalloon({
           return;
         onEscape();
       }}
-      className="absolute bottom-0 block will-change-transform disabled:pointer-events-none"
+      className="absolute bottom-0 block will-change-transform"
       style={
         {
           left: `${balloon.left}%`,
@@ -246,8 +229,9 @@ export function BalloonGame({ onHome }: { onHome: () => void }) {
     setCount(next);
     setBest((current) => Math.max(current, next));
 
-    // FIFO narration: even three quick pops are spoken as one, two, three.
-    enqueueSpeech([numberWord(next)], { rate: 1.08 });
+    // Keep the current word intact, but replace stale queued numbers with the
+    // latest score so rapid popping never leaves narration far behind.
+    enqueueLatestSpeech([numberWord(next)], { rate: 1.12 });
     sfxPop();
     vibrate(20);
 
@@ -364,7 +348,7 @@ export function BalloonGame({ onHome }: { onHome: () => void }) {
           below this clipping plane and rise into the play area. */}
         <div
           data-balloon-field
-          className="relative mb-[12dvh] min-h-0 flex-1 overflow-hidden"
+          className="relative min-h-0 flex-1 overflow-hidden"
         >
           {balloons.map((balloon) => (
             <FlyingBalloon

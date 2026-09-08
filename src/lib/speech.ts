@@ -430,6 +430,19 @@ export function enqueueSpeech(
   playNextQueued();
 }
 
+/**
+ * Preserve the number currently being spoken, but replace any stale queued
+ * number with the newest score. Fast balloon popping stays understandable
+ * without narration falling dozens of counts behind.
+ */
+export function enqueueLatestSpeech(
+  parts: string[],
+  options: SpeakOptions = {},
+) {
+  pendingSpeech = [{ parts, options }];
+  playNextQueued();
+}
+
 export function speakExclusive(
   parts: string[],
   options: SpeakOptions = {},

@@ -8,6 +8,7 @@ import {
 
 export {
   enqueueSpeech,
+  enqueueLatestSpeech,
   isSpeaking,
   isSpeechBusy,
   speak,

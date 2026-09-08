@@ -40,13 +40,13 @@ Tap Pip the fox in the corner for a greeting, then pick a place:
   word takes to say. Interactive choices such as the fruit tray briefly lock
   until the complete “Orange … Yum” response and a short cooldown finish.
   Spoken parts have a 220 ms pause between them, so words never collide.
-  Fast-action play such as balloon popping stays responsive while every
-  number waits in a first-in, first-out speech queue.
+  Fast-action play such as balloon popping stays responsive: the current
+  number finishes, then stale queued numbers collapse to the latest score.
 - **Speech uses an unlocked Web Audio context.** Bundled clips avoid both the
   unreliable `speechSynthesis` timing path and an iOS audio-session conflict
   that can stall the following pronunciation check.
 - **Small, offline assets.** Characters, food and scenery are hand-written
-  SVG. The learning vocabulary is a 2.2 MB library of bundled neural-voice
+  SVG. The learning vocabulary uses a small library of bundled neural-voice
   clips; browser speech is only a fallback for an unusual dynamic sentence.
   Sound effects are synthesised with the Web Audio API.
 
