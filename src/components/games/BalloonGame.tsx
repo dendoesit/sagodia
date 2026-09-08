@@ -26,7 +26,9 @@ const COLORS = [
 ];
 const SLOTS = 6;
 const MILESTONE = 10;
-const RESPAWN_MS = 2600;
+const RESPAWN_MIN_MS = 4500;
+const RESPAWN_JITTER_MS = 3500;
+const INTERACTIVE_PROGRESS = 0.36;
 
 type Balloon = {
   id: number;
@@ -128,6 +130,62 @@ function BalloonArt({ color }: { color: string }) {
   );
 }
 
+function FlyingBalloon({
+  balloon,
+  onPop,
+  onEscape,
+}: {
+  balloon: Balloon;
+  onPop: (rect: DOMRect) => void;
+  onEscape: () => void;
+}) {
+  const elapsedMs = Math.max(0, -balloon.delay * 1000);
+  const armAfterMs = Math.max(
+    0,
+    balloon.duration * 1000 * INTERACTIVE_PROGRESS - elapsedMs,
+  );
+  const [ready, setReady] = useState(armAfterMs === 0);
+
+  useEffect(() => {
+    if (armAfterMs === 0) return;
+    const timer = window.setTimeout(() => setReady(true), armAfterMs);
+    return () => window.clearTimeout(timer);
+  }, [armAfterMs]);
+
+  return (
+    <button
+      type="button"
+      aria-label={ready ? "Pop balloon" : "Balloon rising"}
+      disabled={!ready}
+      data-balloon-ready={ready ? "true" : "false"}
+      onPointerDown={(event) => {
+        event.preventDefault();
+        if (!ready) return;
+        onPop(event.currentTarget.getBoundingClientRect());
+      }}
+      onAnimationEnd={onEscape}
+      className="absolute bottom-0 block will-change-transform disabled:pointer-events-none"
+      style={
+        {
+          left: `${balloon.left}%`,
+          width: `${balloon.size}vmin`,
+          height: `${balloon.size * 1.4}vmin`,
+          animationName: "balloon-flight",
+          animationDuration: `${balloon.duration}s`,
+          animationDelay: `${balloon.delay}s`,
+          animationTimingFunction: "linear",
+          animationFillMode: "both",
+          "--launch-depth": `${balloon.launchDepth}px`,
+          "--drift": `${balloon.drift}vw`,
+          "--spin": `${balloon.spin}deg`,
+        } as React.CSSProperties
+      }
+    >
+      <BalloonArt color={balloon.color} />
+    </button>
+  );
+}
+
 export function BalloonGame({ onHome }: { onHome: () => void }) {
   const { showWords } = useSettings();
   const [balloons, setBalloons] = useState(() =>
@@ -155,7 +213,7 @@ export function BalloonGame({ onHome }: { onHome: () => void }) {
     [],
   );
 
-  const retire = useCallback((balloon: Balloon, wait = RESPAWN_MS) => {
+  const retire = useCallback((balloon: Balloon) => {
     if (retiring.current.has(balloon.id)) return false;
     retiring.current.add(balloon.id);
     setBalloons((current) =>
@@ -168,7 +226,7 @@ export function BalloonGame({ onHome }: { onHome: () => void }) {
           createBalloon(balloon.slot),
         ]);
         retiring.current.delete(balloon.id);
-      }, wait),
+      }, RESPAWN_MIN_MS + Math.random() * RESPAWN_JITTER_MS),
     );
     return true;
   }, []);
@@ -208,7 +266,7 @@ export function BalloonGame({ onHome }: { onHome: () => void }) {
   };
 
   const escape = (balloon: Balloon) => {
-    if (!retire(balloon, 500)) return;
+    if (!retire(balloon)) return;
     if (balloon.grace || countRef.current === 0) return;
 
     // A miss starts a new counting sequence. Old queued numbers are cleared so
@@ -302,37 +360,12 @@ export function BalloonGame({ onHome }: { onHome: () => void }) {
           className="relative mb-[12dvh] min-h-0 flex-1 overflow-hidden"
         >
           {balloons.map((balloon) => (
-            <button
+            <FlyingBalloon
               key={balloon.id}
-              type="button"
-              aria-label="Pop balloon"
-              onPointerDown={(event) => {
-                event.preventDefault();
-                pop(
-                  balloon,
-                  event.currentTarget.getBoundingClientRect(),
-                );
-              }}
-              onAnimationEnd={() => escape(balloon)}
-              className="absolute bottom-0 block will-change-transform"
-              style={
-                {
-                  left: `${balloon.left}%`,
-                  width: `${balloon.size}vmin`,
-                  height: `${balloon.size * 1.4}vmin`,
-                  animationName: "balloon-flight",
-                  animationDuration: `${balloon.duration}s`,
-                  animationDelay: `${balloon.delay}s`,
-                  animationTimingFunction: "linear",
-                  animationFillMode: "both",
-                  "--launch-depth": `${balloon.launchDepth}px`,
-                  "--drift": `${balloon.drift}vw`,
-                  "--spin": `${balloon.spin}deg`,
-                } as React.CSSProperties
-              }
-            >
-              <BalloonArt color={balloon.color} />
-            </button>
+              balloon={balloon}
+              onPop={(rect) => pop(balloon, rect)}
+              onEscape={() => escape(balloon)}
+            />
           ))}
         </div>
       </PlaceFrame>

@@ -2,6 +2,7 @@
 
 import { Pip, Sparkle } from "@/components/art/friends";
 import { sfxSparkle, unlockAudio } from "@/lib/audio";
+import packageInfo from "../../package.json";
 
 /**
  * iOS refuses to speak or play audio unless it starts inside a real user
@@ -34,6 +35,9 @@ export function StartGate({ onStart }: { onStart: () => void }) {
         </h1>
         <p className="mt-1 text-lg font-semibold text-white/95 drop-shadow sm:text-2xl">
           First English words
+        </p>
+        <p className="mt-1 text-sm font-bold text-[#2F2A26]/60 sm:text-base">
+          v{packageInfo.version}
         </p>
       </div>
 
