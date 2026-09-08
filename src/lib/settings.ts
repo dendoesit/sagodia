@@ -8,7 +8,7 @@ export type Settings = {
   muted: boolean;
   showWords: boolean;
   slowVoice: boolean;
-  /** Off by default: see src/lib/pronunciation.ts. */
+  /** Strict by default when browser speech recognition is available. */
   checkPronunciation: boolean;
 };
 
@@ -16,10 +16,11 @@ const DEFAULTS: Settings = {
   muted: false,
   showWords: true,
   slowVoice: false,
-  checkPronunciation: false,
+  checkPronunciation: true,
 };
 
-const STORAGE_KEY = "sunny-town-settings-v2";
+const STORAGE_KEY = "sunny-town-settings-v3";
+const PREVIOUS_STORAGE_KEY = "sunny-town-settings-v2";
 const LEGACY_STORAGE_KEY = "sunny-town-settings";
 
 let current: Settings = DEFAULTS;
@@ -43,17 +44,27 @@ export function hydrateSettings() {
     if (raw) {
       current = { ...DEFAULTS, ...(JSON.parse(raw) as Partial<Settings>) };
     } else {
-      const legacy = window.localStorage.getItem(LEGACY_STORAGE_KEY);
-      if (legacy) {
-        // The previous speech engine could leave testers believing sound was
-        // broken while a stale persisted mute was still active. Preserve the
-        // useful preferences, but turn sound back on once for this migration.
+      const previous = window.localStorage.getItem(PREVIOUS_STORAGE_KEY);
+      if (previous) {
         current = {
           ...DEFAULTS,
-          ...(JSON.parse(legacy) as Partial<Settings>),
-          muted: false,
+          ...(JSON.parse(previous) as Partial<Settings>),
+          checkPronunciation: true,
         };
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
+      } else {
+        const legacy = window.localStorage.getItem(LEGACY_STORAGE_KEY);
+        if (legacy) {
+          // The previous speech engine could leave testers believing sound was
+          // broken while a stale persisted mute was still active.
+          current = {
+            ...DEFAULTS,
+            ...(JSON.parse(legacy) as Partial<Settings>),
+            muted: false,
+            checkPronunciation: true,
+          };
+          window.localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
+        }
       }
     }
   } catch {

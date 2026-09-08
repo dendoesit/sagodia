@@ -40,9 +40,8 @@ const PROMPT_FALLBACK_MS = 3400;
  * Repeat-after-me, played on top of whichever place the child is already in.
  *
  * The app says one word, then visibly listens: the ring around the picture
- * breathes with the child's real voice. Every attempt earns a star and a new
- * animal arrives — nothing here can be got wrong, because the aim is to get
- * them talking, not to grade them.
+ * breathes with the child's real voice. With pronunciation checking enabled,
+ * the recognised word must match before a star is awarded.
  */
 export function SayAlong({
   items,
@@ -56,6 +55,8 @@ export function SayAlong({
   onExit: () => void;
 }) {
   const { checkPronunciation, showWords } = useSettings();
+  const recognitionSupported = isRecognitionSupported();
+  const strictChecking = checkPronunciation && recognitionSupported;
   const [item, setItem] = useState(first);
   const [phase, setPhase] = useState<Phase>("prompt");
   const [micReady, setMicReady] = useState(false);
@@ -74,6 +75,7 @@ export function SayAlong({
   const alive = useRef(true);
   /** Breaks the cycle: presenting listens, and listening presents the next one. */
   const presentRef = useRef<(next: SayItem) => void>(() => {});
+  const beginListeningRef = useRef<() => void>(() => {});
 
   const clearTimers = useCallback(() => {
     timers.current.forEach((id) => window.clearTimeout(id));
@@ -140,36 +142,91 @@ export function SayAlong({
     );
   }, [clearTimers, endRecognition, items, stars]);
 
+  const registerAttempt = useCallback(() => {
+    // In strict mode loudness only drives the listening animation. The
+    // recognition transcript, not the presence of noise, decides the result.
+    if (!checkPronunciation) heard();
+  }, [checkPronunciation, heard]);
+
   const { arm, disarm, start: startMic } = useVoiceListener({
     onFrame: paintLevel,
-    onSpeech: heard,
+    onSpeech: registerAttempt,
   });
 
   const beginListening = useCallback(() => {
     if (!alive.current || phaseRef.current === "cheer") return;
     const word = itemRef.current;
 
+    clearTimers();
+    endRecognition();
+    disarm();
     phaseRef.current = "listening";
     setPhase("listening");
     matched.current = false;
     arm();
 
-    if (checkPronunciation && isRecognitionSupported()) {
-      stopRecognition.current = listenForWord(({ transcript }) => {
-        if (!matchesWord(transcript, word.word)) return;
-        matched.current = true;
-        heard();
-      });
+    if (strictChecking) {
+      stopRecognition.current = listenForWord(
+        ({ transcript }) => {
+          if (!matchesWord(transcript, word.word)) return;
+          matched.current = true;
+          heard();
+        },
+        (heardSpeech) => {
+          stopRecognition.current = null;
+          if (
+            !alive.current ||
+            phaseRef.current !== "listening" ||
+            matched.current
+          )
+            return;
+
+          let restarted = false;
+          const restart = () => {
+            if (restarted || !alive.current) return;
+            restarted = true;
+            beginListeningRef.current();
+          };
+          if (heardSpeech) {
+            speak("Try again!", { onEnd: restart });
+            timers.current.push(window.setTimeout(restart, 3500));
+          } else {
+            timers.current.push(window.setTimeout(restart, 300));
+          }
+        },
+      );
     }
 
     timers.current.push(
       window.setTimeout(() => {
         if (!alive.current || phaseRef.current !== "listening") return;
-        speak(word.word, { rate: 0.85 });
-        arm();
+        if (strictChecking) {
+          endRecognition();
+          disarm();
+          let restarted = false;
+          const restart = () => {
+            if (restarted || !alive.current) return;
+            restarted = true;
+            beginListeningRef.current();
+          };
+          speak(word.word, { rate: 0.85, onEnd: restart });
+          timers.current.push(
+            window.setTimeout(restart, PROMPT_FALLBACK_MS),
+          );
+        } else {
+          speak(word.word, { rate: 0.85 });
+          arm();
+        }
       }, NUDGE_MS),
     );
-  }, [arm, checkPronunciation, heard]);
+  }, [
+    arm,
+    clearTimers,
+    disarm,
+    endRecognition,
+    heard,
+    strictChecking,
+  ]);
 
   const present = useCallback(
     (next: SayItem) => {
@@ -198,6 +255,10 @@ export function SayAlong({
   useEffect(() => {
     presentRef.current = present;
   }, [present]);
+
+  useEffect(() => {
+    beginListeningRef.current = beginListening;
+  }, [beginListening]);
 
   const listenAfterCurrentPrompt = useCallback(() => {
     stopBusySubscription.current?.();
@@ -240,6 +301,8 @@ export function SayAlong({
 
   const Art = item.Art;
   const listening = phase === "listening";
+  const automaticListening =
+    micReady && (!checkPronunciation || recognitionSupported);
 
   return (
     <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#2F2A26]/55 px-4 pb-4 pt-[5rem] backdrop-blur-[3px] sm:pt-[5.75rem]">
@@ -275,7 +338,7 @@ export function SayAlong({
             </p>
           ) : null}
 
-          {micReady ? (
+          {automaticListening ? (
             <>
               <div
                 aria-label={listening ? "Listening now" : "Getting ready"}
@@ -337,7 +400,9 @@ export function SayAlong({
             {phase === "prompt"
               ? "Listen…"
               : listening
-                ? "Your turn!"
+                ? checkPronunciation && !recognitionSupported
+                  ? "Ask a grown-up!"
+                  : "Your turn!"
                 : "Yes!"}
           </p>
 

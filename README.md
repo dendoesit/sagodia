@@ -14,7 +14,7 @@ Tap Pip the fox in the corner for a greeting, then pick a place:
 
 | Place            | Words taught                      | How you play                                                            |
 | ---------------- | --------------------------------- | ----------------------------------------------------------------------- |
-| **Farm**         | cow, pig, sheep, duck, cat, dog, horse, chicken | Tap an animal — the app says its name once, then visibly listens while a ring breathes with the child's voice. Each spoken attempt earns a star and brings in another animal. There is no separate microphone button. |
+| **Farm**         | cow, pig, sheep, duck, cat, dog, horse, chicken | Tap an animal — the app says its name once, then visibly listens while a ring breathes with the child's voice. The recognised word must match before a star is awarded. There is no separate microphone button. |
 | **Kitchen**      | apple, banana, orange, strawberry, carrot, broccoli, cookie, grapes | Match the food pictured in “Munchie wants a banana.” Tap Munchie to hear the request. A wrong snack is named, then gently spat back while Munchie shakes his head. |
 | **Paint tent**   | red, blue, yellow, green, orange, purple, pink, brown | Pick a colour, tap a part of the picture to fill it. Eleven pictures, and the yellow arrow moves on to the next one. |
 | **Balloons**     | counting, with no upper limit     | Pop balloons drifting up from below the screen. The count keeps climbing and cheers every ten; letting one escape off the top starts it over. |
@@ -56,13 +56,11 @@ Press **and hold** the gear in the top-right of the town for about a second —
 long enough that a child mashing the screen will not get in. You can mute the
 app, hide the written words and slow the voice down.
 
-After an animal is tapped, the microphone only measures loudness so the
-listening ring reacts to the child's voice; nothing is recorded or sent
-anywhere. On browsers that support speech recognition there is an extra,
-off-by-default toggle that also checks whether the word was pronounced. It is
-deliberately off because toddler speech confuses recognisers and being told
-"no" is the opposite of the point. Without microphone access, a large green
-tick appears so the child can still complete the speaking turn.
+After an animal is tapped, local microphone loudness drives the listening
+ring. Pronunciation checking is on by default and uses the browser's speech
+recognition service; only a tolerant match for the displayed animal awards a
+star. It can be disabled in grown-up settings. If recognition is unavailable,
+a large green tick lets a grown-up confirm the attempt manually.
 
 ## Run it locally
 

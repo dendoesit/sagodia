@@ -93,11 +93,15 @@ export function matchesWord(transcript: string, target: string): boolean {
  * Starts recognition and reports transcripts. Returns a stop function, or
  * null when the browser cannot do this.
  */
-export function listenForWord(onHeard: (result: Listener) => void): (() => void) | null {
+export function listenForWord(
+  onHeard: (result: Listener) => void,
+  onDone?: (heardSpeech: boolean) => void,
+): (() => void) | null {
   const Recognition = window.SpeechRecognition ?? window.webkitSpeechRecognition;
   if (!Recognition) return null;
 
   let stopped = false;
+  let heardSpeech = false;
   let recognition: RecognitionLike;
   try {
     recognition = new Recognition();
@@ -114,12 +118,20 @@ export function listenForWord(onHeard: (result: Listener) => void): (() => void)
     for (let i = event.resultIndex; i < event.results.length; i += 1) {
       const result = event.results[i];
       for (let j = 0; j < result.length; j += 1) {
+        if (result[j].transcript.trim()) heardSpeech = true;
         onHeard({ transcript: result[j].transcript, isFinal: result.isFinal });
       }
     }
   };
   recognition.onerror = () => {
+    if (stopped) return;
     stopped = true;
+    onDone?.(heardSpeech);
+  };
+  recognition.onend = () => {
+    if (stopped) return;
+    stopped = true;
+    onDone?.(heardSpeech);
   };
 
   try {

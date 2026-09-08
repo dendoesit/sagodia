@@ -103,7 +103,7 @@ export function SettingsSheet({
           {isRecognitionSupported() ? (
             <Toggle
               label="Check animal pronunciation"
-              hint="Sends speech to your browser's recognition service. Your child still earns a star for every try."
+              hint="Uses your browser's recognition service. Only the matching animal word earns a star."
               value={settings.checkPronunciation}
               onChange={(next) => updateSettings({ checkPronunciation: next })}
             />
