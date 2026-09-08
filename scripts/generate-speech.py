@@ -124,9 +124,17 @@ def build_lines() -> list[str]:
 
     for food in FOODS:
         lower = food.lower()
+        article = (
+            "some"
+            if lower in {"broccoli", "grapes"}
+            else "an"
+            if lower[0] in "aeiou"
+            else "a"
+        )
         lines.update(
             {
                 f"Give me the {lower}!",
+                f"Munchie wants {article} {lower}.",
                 f"Yummy, but I want the {lower}!",
             }
         )

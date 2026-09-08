@@ -10,12 +10,10 @@ import {
   sfxPop,
   sfxSparkle,
   sfxWhoosh,
-  speak,
   speakTapped,
   vibrate,
 } from "@/lib/audio";
-import { FOODS, type FoodWord } from "@/lib/content";
-import { useFindChallenge } from "@/lib/useFindChallenge";
+import { FOODS, type FoodWord, pickRandom } from "@/lib/content";
 import { useSpeechBusy } from "@/lib/useSpeechBusy";
 
 type Flight = {
@@ -108,23 +106,37 @@ function FoodTile({
   );
 }
 
+function withArticle(word: string): string {
+  const lower = word.toLowerCase();
+  if (lower === "broccoli" || lower === "grapes") return `some ${lower}`;
+  return `${/^[aeiou]/.test(lower) ? "an" : "a"} ${lower}`;
+}
+
 export function KitchenGame({ onHome }: { onHome: () => void }) {
-  const { bubble, showWord } = useWordBubble();
+  const { showWord } = useWordBubble();
   const speechBusy = useSpeechBusy();
-  const challenge = useFindChallenge(FOODS, {
-    question: (word) => `Give me the ${word}!`,
-    miss: (word) => `Yummy, but I want the ${word}!`,
-  });
+  const [wanted, setWanted] = useState(() => pickRandom(FOODS));
   const [flights, setFlights] = useState<Flight[]>([]);
   const [mouth, setMouth] = useState<MunchyMouth>("smile");
+  const [wrong, setWrong] = useState(false);
   const [happy, setHappy] = useState(0);
-  const munchyRef = useRef<HTMLDivElement>(null);
+  const munchyRef = useRef<HTMLButtonElement>(null);
   const flightKey = useRef(0);
   const fed = useRef(0);
   const mouthTimer = useRef<number | undefined>(undefined);
+  const wrongTimer = useRef<number | undefined>(undefined);
+  const requestTimer = useRef<number | undefined>(undefined);
   const foodLocked = speechBusy || flights.length > 0;
+  const WantedArt = FOOD_ART[wanted.id];
 
-  useEffect(() => () => window.clearTimeout(mouthTimer.current), []);
+  useEffect(
+    () => () => {
+      window.clearTimeout(mouthTimer.current);
+      window.clearTimeout(wrongTimer.current);
+      window.clearTimeout(requestTimer.current);
+    },
+    [],
+  );
 
   const handleTap = (food: FoodWord, rect: DOMRect) => {
     if (foodLocked) return;
@@ -161,15 +173,17 @@ export function KitchenGame({ onHome }: { onHome: () => void }) {
 
     sfxPop();
 
-    // The verdict waits until the food actually reaches the mouth, so Munchy
-    // tastes it before deciding — being told "not the apple" while the banana
-    // is still in the air makes no sense to a three-year-old.
-    const verdict = challenge.check(flight.food, [`${flight.food.word}!`]);
-
-    if (verdict === "wrong") {
+    const correct = flight.food.id === wanted.id;
+    if (!correct) {
+      // Name the fruit that was actually touched, then show the answer rather
+      // than reading another instruction over it.
+      speakTapped(flight.food.id, [flight.food.word]);
       setMouth("open");
+      setWrong(true);
       window.clearTimeout(mouthTimer.current);
+      window.clearTimeout(wrongTimer.current);
       mouthTimer.current = window.setTimeout(() => setMouth("smile"), 900);
+      wrongTimer.current = window.setTimeout(() => setWrong(false), 900);
       flightKey.current += 1;
       setFlights((current) => [
         ...current,
@@ -186,19 +200,18 @@ export function KitchenGame({ onHome }: { onHome: () => void }) {
 
     setMouth("chew");
     fed.current += 1;
-    if (verdict === "idle") {
-      speakTapped(flight.food.id, [`${flight.food.word}!`, "Yum!"]);
-    }
+    speakTapped(flight.food.id, [`${flight.food.word}!`, "Yum!"]);
 
     window.clearTimeout(mouthTimer.current);
     mouthTimer.current = window.setTimeout(() => setMouth("smile"), 900);
+    window.clearTimeout(requestTimer.current);
+    requestTimer.current = window.setTimeout(() => {
+      setWanted((current) => pickRandom(FOODS, current));
+    }, 900);
 
     if (fed.current % 5 === 0) {
       setHappy((n) => n + 1);
       sfxSparkle();
-      if (verdict === "idle") {
-        speak("Thank you! So tasty!", { interrupt: false });
-      }
     }
   };
 
@@ -208,20 +221,32 @@ export function KitchenGame({ onHome }: { onHome: () => void }) {
 
       <PlaceFrame
         onHome={onHome}
-        onAsk={challenge.start}
-        asking={challenge.active}
-        prompt={challenge.prompt}
-        bubble={bubble}
-        bubbleTone="#B5651D"
+        prompt={
+          <span className="flex items-center gap-2">
+            <WantedArt className="h-9 w-9" title={wanted.word} />
+            <span>Munchie wants {withArticle(wanted.word)}.</span>
+          </span>
+        }
       >
         <div className="flex min-h-0 flex-1 flex-col items-center gap-2 px-2 pb-3 sm:px-4 landscape:flex-row landscape:gap-3">
           <div className="flex min-h-0 w-full flex-1 items-center justify-center landscape:h-full landscape:w-auto">
-            <div
+            <button
+              type="button"
               ref={munchyRef}
-              className="anim-bob aspect-square h-full max-h-full max-w-full"
+              aria-label={`Munchie wants ${withArticle(wanted.word)}`}
+              disabled={speechBusy}
+              onPointerDown={(event) => {
+                event.preventDefault();
+                speakTapped(`munchie-${wanted.id}`, [
+                  `Munchie wants ${withArticle(wanted.word)}.`,
+                ]);
+              }}
+              className={`aspect-square h-full max-h-full max-w-full ${
+                wrong ? "anim-shake" : "anim-bob"
+              } transition-transform active:scale-95`}
             >
               <Munchy mouth={mouth} className="h-full w-full" title="Munchy" />
-            </div>
+            </button>
           </div>
 
           {/* Square tiles: four columns by two rows is a 2:1 box, so the art
@@ -231,7 +256,7 @@ export function KitchenGame({ onHome }: { onHome: () => void }) {
               <FoodTile
                 key={food.id}
                 food={food}
-                hint={challenge.hint && challenge.target?.id === food.id}
+                hint={wrong && wanted.id === food.id}
                 disabled={foodLocked}
                 onTap={handleTap}
               />
@@ -248,8 +273,6 @@ export function KitchenGame({ onHome }: { onHome: () => void }) {
         />
       ))}
 
-      <Celebration trigger={challenge.celebrate} />
-      <Celebration trigger={challenge.finale} big />
       <Celebration trigger={happy} />
     </div>
   );

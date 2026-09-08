@@ -15,33 +15,33 @@ Tap Pip the fox in the corner for a greeting, then pick a place:
 | Place            | Words taught                      | How you play                                                            |
 | ---------------- | --------------------------------- | ----------------------------------------------------------------------- |
 | **Farm**         | cow, pig, sheep, duck, cat, dog, horse, chicken | Tap an animal — the app says its name once, then visibly listens while a ring breathes with the child's voice. Each spoken attempt earns a star and brings in another animal. There is no separate microphone button. |
-| **Kitchen**      | apple, banana, orange, strawberry, carrot, broccoli, cookie, grapes | Tap food to fly it into Munchy's mouth. |
+| **Kitchen**      | apple, banana, orange, strawberry, carrot, broccoli, cookie, grapes | Match the food pictured in “Munchie wants a banana.” Tap Munchie to hear the request. A wrong snack is named, then gently spat back while Munchie shakes his head. |
 | **Paint tent**   | red, blue, yellow, green, orange, purple, pink, brown | Pick a colour, tap a part of the picture to fill it. Eleven pictures, and the yellow arrow moves on to the next one. |
 | **Balloons**     | counting, with no upper limit     | Pop balloons drifting up from below the screen. The count keeps climbing and cheers every ten; letting one escape off the top starts it over. |
 | **Workshop**     | circle, square, triangle, star, heart | Tap a shape, tap its matching hole.                                  |
 | **Station**      | one, two, three, four             | Couple the wagons in order and the train pulls out of the station. Each wagon carries its numeral *and* that many dots, because the dots are what a three-year-old can already count. |
-| **Listen & find** | all of the above                 | The ear button starts a gentle round — "Touch the cow!" in the farm, "Give me the apple!" in the kitchen, "Find blue!" in the paint tent. Three finds, then it ends itself. |
+| **Listen & find** | animals and colours              | The ear button starts a gentle three-round listening game in the farm or paint tent. |
 
 ### Design rules
 
-- **No reading required.** Every instruction is spoken. Written words appear
-  only as a large label under the picture, which parents can turn off.
+- **No reading required.** Place cards do not narrate names or generic
+  instructions. Relevant taps speak the learning word; pictures and large
+  labels provide the visual prompt, and parents can hide the labels.
 - **No failure, but never silence either.** A wrong tap during a "find it"
   round is answered rather than judged: the thing they touched introduces
   itself, the app says it is not the one being looked for, the target speaks
   up, and the question is asked again. Tap the dog while looking for the cat
   and you get "Woof woof! Not the cat! Meow! Touch the cat!" — two words
   learned from a mistake, and nothing is ever blocked or scored. Hand Munchy
-  the wrong food and he tastes it, says "Yummy, but I want the cookie!", and
-  spits it back out.
+  the wrong food and he shakes his head and spits it back out.
 - **Huge targets, instant feedback.** Interactions fire on `pointerdown`, not
   click, because toddlers drag their finger while pressing.
 - **One teaching phrase at a time.** A three-year-old taps far faster than a
   word takes to say. Interactive choices such as the fruit tray briefly lock
   until the complete “Orange … Yum” response and a short cooldown finish.
   Spoken parts have a 220 ms pause between them, so words never collide.
-  Fast-action play such as balloon popping stays responsive while narration
-  is busy; it may skip a spoken number, but it never ignores a pop.
+  Fast-action play such as balloon popping stays responsive while every
+  number waits in a first-in, first-out speech queue.
 - **Speech starts inside the tap.** A single reusable audio player starts a
   bundled voice clip synchronously in the gesture that asked for it. This
   avoids the unreliable `speechSynthesis` timing path on iOS.

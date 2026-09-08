@@ -10,15 +10,14 @@ import {
   sfxCouple,
   sfxTap,
   sfxWhistle,
-  speak,
   speakTapped,
   vibrate,
 } from "@/lib/audio";
 import { numberWord } from "@/lib/content";
 
 const WAGONS = [1, 2, 3, 4];
-/** Long enough to hear "one, two, three, four" before the whistle. */
-const COUNT_MS = 3400;
+/** Let the final spoken number finish before the whistle. */
+const COUNT_MS = 1100;
 const DEPART_MS = 3000;
 
 /** A horizon right behind the train, so the sky is scenery and not dead space. */
@@ -81,7 +80,6 @@ export function TrainGame({ onHome }: { onHome: () => void }) {
     setCoupled(0);
     setWrong(null);
     setYard(shuffle(WAGONS));
-    speak("Here comes another train! Find number one.");
   }, []);
 
   const next = coupled + 1;
@@ -95,12 +93,7 @@ export function TrainGame({ onHome }: { onHome: () => void }) {
       setWrong(value);
       window.setTimeout(() => setWrong((current) => (current === value ? null : current)), 500);
       showWord(numberWord(value));
-      // Never "wrong": it says what was tapped and what comes next, which is
-      // the lesson either way.
-      speakTapped(`wagon-${value}`, [
-        `That is ${numberWord(value).toLowerCase()}.`,
-        `We need ${numberWord(next).toLowerCase()}.`,
-      ]);
+      speakTapped(`wagon-${value}`, [numberWord(value)]);
       return;
     }
 
@@ -115,15 +108,13 @@ export function TrainGame({ onHome }: { onHome: () => void }) {
       return;
     }
 
-    // Full train: count the whole thing back, whistle, and pull away.
-    speak(`${numberWord(value)}! One, two, three, four! All aboard!`);
+    speakTapped(`wagon-${value}`, [numberWord(value)]);
     timers.current.push(
       window.setTimeout(() => {
         sfxWhistle();
         sfxChuffs();
         setLeaving(true);
         setParty((n) => n + 1);
-        speak("The train is leaving the station! Goodbye!");
       }, COUNT_MS),
     );
     timers.current.push(

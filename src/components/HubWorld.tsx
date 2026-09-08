@@ -75,7 +75,6 @@ export function HubWorld({ onOpen }: { onOpen: (place: PlaceId) => void }) {
     if (!place) return;
     sfxDoor();
     vibrate();
-    speak(`${place.word}. ${place.invitation}`);
     onOpen(id);
   };
 

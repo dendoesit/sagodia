@@ -10,11 +10,10 @@ import {
   sfxPop,
   sfxSuccess,
   sfxTap,
-  speak,
   speakTapped,
   vibrate,
 } from "@/lib/audio";
-import { SHAPES, type ShapeWord, randomCheer } from "@/lib/content";
+import { SHAPES, type ShapeWord } from "@/lib/content";
 
 function shuffle<T>(items: T[]): T[] {
   const copy = [...items];
@@ -58,10 +57,7 @@ export function ShapesGame({ onHome }: { onHome: () => void }) {
     if (!selected) {
       sfxTap();
       showWord(hole.word);
-      speakTapped(`hole-${hole.id}`, [
-        `This is a ${hole.word.toLowerCase()}.`,
-        "Pick one below!",
-      ]);
+      speakTapped(`hole-${hole.id}`, [hole.word]);
       return;
     }
     if (hole.id !== selected.id) {
@@ -69,9 +65,7 @@ export function ShapesGame({ onHome }: { onHome: () => void }) {
       setWrongHole(hole.id);
       window.setTimeout(() => setWrongHole(null), 500);
       showWord(hole.word);
-      speakTapped(`hole-${hole.id}`, [
-        `That one is a ${hole.word.toLowerCase()}.`,
-      ]);
+      speakTapped(`hole-${hole.id}`, [hole.word]);
       return;
     }
 
@@ -84,14 +78,12 @@ export function ShapesGame({ onHome }: { onHome: () => void }) {
     if (Object.keys(next).length === SHAPES.length) {
       sfxFanfare();
       setParty((n) => n + 1);
-      speak(`${hole.word}! All done! Wonderful!`);
       resetTimer.current = window.setTimeout(() => {
         setPlaced({});
         setLayout({ holes: shuffle(SHAPES), tray: shuffle(SHAPES) });
       }, 3200);
     } else {
       sfxSuccess();
-      speak(`${randomCheer()} ${hole.word}!`);
     }
   };
 

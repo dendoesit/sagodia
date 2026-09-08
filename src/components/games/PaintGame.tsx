@@ -9,12 +9,11 @@ import {
   sfxPop,
   sfxSparkle,
   sfxTap,
-  speak,
   speakTapped,
   vibrate,
 } from "@/lib/audio";
 import { COLORS, type ColorWord } from "@/lib/content";
-import { PAINTABLES, type Region, withArticle } from "@/lib/paintables";
+import { PAINTABLES, type Region } from "@/lib/paintables";
 import { useFindChallenge } from "@/lib/useFindChallenge";
 
 const BLANK = "#FFFFFF";
@@ -85,19 +84,16 @@ export function PaintGame({ onHome }: { onHome: () => void }) {
 
   useEffect(() => () => window.clearTimeout(swapTimer.current), []);
 
-  const goToPicture = useCallback((index: number, announce: boolean) => {
+  const goToPicture = useCallback((index: number) => {
     window.clearTimeout(swapTimer.current);
     setPictureIndex(index);
     setFills({});
     setFinished(false);
-    if (announce) {
-      speak(`${withArticle(PAINTABLES[index].word)}! Let's paint.`);
-    }
   }, []);
 
   const nextPicture = () => {
     sfxSparkle();
-    goToPicture((pictureIndex + 1) % PAINTABLES.length, true);
+    goToPicture((pictureIndex + 1) % PAINTABLES.length);
   };
 
   const pickColor = (next: ColorWord) => {
@@ -132,12 +128,7 @@ export function PaintGame({ onHome }: { onHome: () => void }) {
     setFinished(true);
     setParty((n) => n + 1);
     sfxFanfare();
-    speak(
-      `Beautiful ${picture.word.toLowerCase()}! Now let's paint ${withArticle(
-        PAINTABLES[upcoming].word,
-      )}.`,
-    );
-    swapTimer.current = window.setTimeout(() => goToPicture(upcoming, false), 3600);
+    swapTimer.current = window.setTimeout(() => goToPicture(upcoming), 1800);
   };
 
   return (

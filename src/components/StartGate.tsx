@@ -1,7 +1,7 @@
 "use client";
 
 import { Pip, Sparkle } from "@/components/art/friends";
-import { sfxSparkle, speak, unlockAudio } from "@/lib/audio";
+import { sfxSparkle, unlockAudio } from "@/lib/audio";
 
 /**
  * iOS refuses to speak or play audio unless it starts inside a real user
@@ -11,7 +11,6 @@ export function StartGate({ onStart }: { onStart: () => void }) {
   const begin = () => {
     unlockAudio();
     sfxSparkle();
-    speak("Hello! Welcome to Sunny Town. Let's learn some words!");
     onStart();
   };
 

@@ -12,7 +12,7 @@ export type PlaceId =
 
 export type PlaceInfo = {
   id: PlaceId;
-  /** Spoken when the child taps the place, and announced on entry. */
+  /** Used for accessible names; place cards no longer trigger narration. */
   word: string;
   /** Printed on the card. */
   label: string;
