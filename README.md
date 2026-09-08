@@ -36,10 +36,12 @@ Tap Pip the fox in the corner for a greeting, then pick a place:
   spits it back out.
 - **Huge targets, instant feedback.** Interactions fire on `pointerdown`, not
   click, because toddlers drag their finger while pressing.
-- **Every tap answers.** A three-year-old taps far faster than a word takes to
-  say. Tapping a *different* thing interrupts and says the new one, because a
-  tap that produces silence teaches nothing; tapping the *same* thing again
-  waits its turn, so a word can never stutter over itself.
+- **One teaching phrase at a time.** A three-year-old taps far faster than a
+  word takes to say. Interactive choices such as the fruit tray briefly lock
+  until the complete “Orange … Yum” response and a short cooldown finish.
+  Spoken parts have a 220 ms pause between them, so words never collide.
+  Fast-action play such as balloon popping stays responsive while narration
+  is busy; it may skip a spoken number, but it never ignores a pop.
 - **Speech starts inside the tap.** A single reusable audio player starts a
   bundled voice clip synchronously in the gesture that asked for it. This
   avoids the unreliable `speechSynthesis` timing path on iOS.
