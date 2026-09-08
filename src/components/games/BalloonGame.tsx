@@ -26,8 +26,8 @@ const COLORS = [
 ];
 const SLOTS = 6;
 const MILESTONE = 10;
-const RESPAWN_MIN_MS = 4500;
-const RESPAWN_JITTER_MS = 3500;
+const RESPAWN_MIN_MS = 900;
+const RESPAWN_JITTER_MS = 700;
 const INTERACTIVE_PROGRESS = 0.36;
 
 type Balloon = {
@@ -71,7 +71,7 @@ function createBalloon(slot: number, initial = false): Balloon {
     duration,
     delay: initial
       ? -(slot / SLOTS) * duration * 0.78
-      : 0,
+      : -duration * INTERACTIVE_PROGRESS,
     launchDepth: 80 + Math.random() * 100,
     drift: (Math.random() - 0.5) * 18,
     spin: (Math.random() - 0.5) * 22,
@@ -181,7 +181,9 @@ function FlyingBalloon({
         } as React.CSSProperties
       }
     >
-      <BalloonArt color={balloon.color} />
+      <span className="anim-pop-in block h-full w-full">
+        <BalloonArt color={balloon.color} />
+      </span>
     </button>
   );
 }
