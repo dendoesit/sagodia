@@ -28,7 +28,7 @@ const SLOTS = 6;
 const MILESTONE = 10;
 const RESPAWN_MIN_MS = 900;
 const RESPAWN_JITTER_MS = 700;
-const INTERACTIVE_PROGRESS = 0.36;
+const INTERACTIVE_PROGRESS = 0.28;
 
 type Balloon = {
   id: number;
@@ -60,7 +60,7 @@ let nextId = 1;
  * DOM, so a popped balloon cannot look parked along the bottom edge.
  */
 function createBalloon(slot: number, initial = false): Balloon {
-  const duration = 12 + Math.random() * 5;
+  const duration = 9 + Math.random() * 3;
   const lane = (slot * 31 + Math.random() * 8) % 82;
   return {
     id: nextId++,
@@ -71,7 +71,7 @@ function createBalloon(slot: number, initial = false): Balloon {
     duration,
     delay: initial
       ? -(slot / SLOTS) * duration * 0.78
-      : -duration * INTERACTIVE_PROGRESS,
+      : 0,
     launchDepth: 80 + Math.random() * 100,
     drift: (Math.random() - 0.5) * 18,
     spin: (Math.random() - 0.5) * 22,
@@ -171,7 +171,7 @@ function FlyingBalloon({
           return;
         onEscape();
       }}
-      className="absolute bottom-0 block opacity-100 transition-opacity duration-500 will-change-transform disabled:pointer-events-none disabled:opacity-0"
+      className="absolute bottom-0 block will-change-transform disabled:pointer-events-none"
       style={
         {
           left: `${balloon.left}%`,
@@ -188,9 +188,7 @@ function FlyingBalloon({
         } as React.CSSProperties
       }
     >
-      <span className="anim-pop-in block h-full w-full">
-        <BalloonArt color={balloon.color} />
-      </span>
+      <BalloonArt color={balloon.color} />
     </button>
   );
 }
