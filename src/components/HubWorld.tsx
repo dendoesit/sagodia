@@ -14,6 +14,7 @@ import { HoldButton, SettingsSheet } from "@/components/ui/SettingsSheet";
 import { sfxDoor, sfxSparkle, speak, vibrate } from "@/lib/audio";
 import { PLACES, type PlaceId, pickRandom } from "@/lib/content";
 import { useSettings } from "@/lib/settings";
+import packageInfo from "../../package.json";
 
 const SCENES: Record<
   PlaceId,
@@ -127,25 +128,30 @@ export function HubWorld({ onOpen }: { onOpen: (place: PlaceId) => void }) {
               Sunny Town
             </h1>
           </div>
-          <HoldButton
-            label="Grown-up settings (press and hold)"
-            onHold={() => {
-              sfxSparkle();
-              setSettingsOpen(true);
-            }}
-            className="h-12 w-12 border-4 border-white/70 bg-white/30 backdrop-blur-sm"
-          >
-            <svg viewBox="0 0 100 100" className="h-6 w-6" aria-hidden>
-              <path
-                d="M50 32 a18 18 0 1 0 0.1 0 Z M42 6 h16 l3 13 a34 34 0 0 1 10 6 l13 -5 8 14 -10 9 a34 34 0 0 1 0 12 l10 9 -8 14 -13 -5 a34 34 0 0 1 -10 6 l-3 13 h-16 l-3 -13 a34 34 0 0 1 -10 -6 l-13 5 -8 -14 10 -9 a34 34 0 0 1 0 -12 l-10 -9 8 -14 13 5 a34 34 0 0 1 10 -6 Z"
-                fill="#FFFFFF"
-                stroke="#2F2A26"
-                strokeWidth={4}
-                strokeLinejoin="round"
-                fillRule="evenodd"
-              />
-            </svg>
-          </HoldButton>
+          <div className="flex shrink-0 flex-col items-center">
+            <HoldButton
+              label="Grown-up settings (press and hold)"
+              onHold={() => {
+                sfxSparkle();
+                setSettingsOpen(true);
+              }}
+              className="h-12 w-12 border-4 border-white/70 bg-white/30 backdrop-blur-sm"
+            >
+              <svg viewBox="0 0 100 100" className="h-6 w-6" aria-hidden>
+                <path
+                  d="M50 32 a18 18 0 1 0 0.1 0 Z M42 6 h16 l3 13 a34 34 0 0 1 10 6 l13 -5 8 14 -10 9 a34 34 0 0 1 0 12 l10 9 -8 14 -13 -5 a34 34 0 0 1 -10 6 l-3 13 h-16 l-3 -13 a34 34 0 0 1 -10 -6 l-13 5 -8 -14 10 -9 a34 34 0 0 1 0 -12 l-10 -9 l8 -14 13 5 a34 34 0 0 1 10 -6 l3 -13 Z"
+                  fill="#FFFFFF"
+                  stroke="#2F2A26"
+                  strokeWidth={4}
+                  strokeLinejoin="round"
+                  fillRule="evenodd"
+                />
+              </svg>
+            </HoldButton>
+            <span className="mt-1 rounded-full bg-white/70 px-1.5 py-0.5 text-[10px] font-bold leading-none text-[#2F2A26]/70 shadow-sm">
+              v{packageInfo.version}
+            </span>
+          </div>
         </header>
 
         {/* Scrolls rather than shrinks: new places should make the town longer,

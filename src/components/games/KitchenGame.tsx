@@ -13,11 +13,11 @@ import {
   speakTapped,
   vibrate,
 } from "@/lib/audio";
-import { FOODS, type FoodWord, pickRandom } from "@/lib/content";
 import {
-  foodWithArticle,
-  getKitchenRequest,
-} from "@/lib/kitchenRequest";
+  FOODS,
+  type FoodWord,
+  pickRandom,
+} from "@/lib/content";
 import { useSpeechBusy } from "@/lib/useSpeechBusy";
 
 type Flight = {
@@ -110,10 +110,16 @@ function FoodTile({
   );
 }
 
+function foodWithArticle(word: string): string {
+  const lower = word.toLowerCase();
+  if (lower === "broccoli" || lower === "grapes") return `some ${lower}`;
+  return `${/^[aeiou]/.test(lower) ? "an" : "a"} ${lower}`;
+}
+
 export function KitchenGame({ onHome }: { onHome: () => void }) {
   const { showWord } = useWordBubble();
   const speechBusy = useSpeechBusy();
-  const [wanted, setWanted] = useState(getKitchenRequest);
+  const [wanted, setWanted] = useState(() => pickRandom(FOODS));
   const [flights, setFlights] = useState<Flight[]>([]);
   const [mouth, setMouth] = useState<MunchyMouth>("smile");
   const [wrong, setWrong] = useState(false);

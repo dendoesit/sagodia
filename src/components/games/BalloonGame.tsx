@@ -26,6 +26,7 @@ const COLORS = [
 ];
 const SLOTS = 6;
 const MILESTONE = 10;
+const RESPAWN_MS = 2600;
 
 type Balloon = {
   id: number;
@@ -53,8 +54,8 @@ let nextId = 1;
 
 /**
  * Six independent launch lanes keep balloons spread out without making their
- * motion predictable. A replacement waits in an 80–180 px off-screen layer;
- * animation-fill-mode: both keeps it there throughout its delay.
+ * motion predictable. Respawn waiting happens before a balloon exists in the
+ * DOM, so a popped balloon cannot look parked along the bottom edge.
  */
 function createBalloon(slot: number, initial = false): Balloon {
   const duration = 12 + Math.random() * 5;
@@ -68,7 +69,7 @@ function createBalloon(slot: number, initial = false): Balloon {
     duration,
     delay: initial
       ? -(slot / SLOTS) * duration * 0.78
-      : 0.65 + Math.random() * 1.25,
+      : 0,
     launchDepth: 80 + Math.random() * 100,
     drift: (Math.random() - 0.5) * 18,
     spin: (Math.random() - 0.5) * 22,
@@ -141,28 +142,39 @@ export function BalloonGame({ onHome }: { onHome: () => void }) {
   const [party, setParty] = useState(0);
 
   const countRef = useRef(0);
-  const popping = useRef(new Set<number>());
+  const retiring = useRef(new Set<number>());
   const burstTimers = useRef<number[]>([]);
+  const respawnTimers = useRef<number[]>([]);
 
   useEffect(
     () => () => {
       burstTimers.current.forEach((timer) => window.clearTimeout(timer));
+      respawnTimers.current.forEach((timer) => window.clearTimeout(timer));
       stopSpeaking();
     },
     [],
   );
 
-  const replace = useCallback((id: number, slot: number) => {
+  const retire = useCallback((balloon: Balloon, wait = RESPAWN_MS) => {
+    if (retiring.current.has(balloon.id)) return false;
+    retiring.current.add(balloon.id);
     setBalloons((current) =>
-      current.map((balloon) =>
-        balloon.id === id ? createBalloon(slot) : balloon,
-      ),
+      current.filter((item) => item.id !== balloon.id),
     );
+    respawnTimers.current.push(
+      window.setTimeout(() => {
+        setBalloons((current) => [
+          ...current,
+          createBalloon(balloon.slot),
+        ]);
+        retiring.current.delete(balloon.id);
+      }, wait),
+    );
+    return true;
   }, []);
 
   const pop = (balloon: Balloon, rect: DOMRect) => {
-    if (popping.current.has(balloon.id)) return;
-    popping.current.add(balloon.id);
+    if (!retire(balloon)) return;
 
     const next = countRef.current + 1;
     countRef.current = next;
@@ -193,12 +205,10 @@ export function BalloonGame({ onHome }: { onHome: () => void }) {
         );
       }, 520),
     );
-
-    replace(balloon.id, balloon.slot);
   };
 
   const escape = (balloon: Balloon) => {
-    replace(balloon.id, balloon.slot);
+    if (!retire(balloon, 500)) return;
     if (balloon.grace || countRef.current === 0) return;
 
     // A miss starts a new counting sequence. Old queued numbers are cleared so
@@ -285,8 +295,8 @@ export function BalloonGame({ onHome }: { onHome: () => void }) {
           </div>
         }
       >
-        {/* Everything below this clipping plane is a non-interactive launch
-          layer. New balloons wait there, then rise into the play area. */}
+        {/* New balloons are created only after their respawn timer, then begin
+          below this clipping plane and rise into the play area. */}
         <div
           data-balloon-field
           className="relative min-h-0 flex-1 overflow-hidden"
