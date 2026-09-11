@@ -73,10 +73,17 @@ function Cloud({
   );
 }
 
-export function HubWorld({ onOpen }: { onOpen: (place: PlaceId) => void }) {
+export function HubWorld({
+  onOpen,
+  page,
+  onPageChange,
+}: {
+  onOpen: (place: PlaceId) => void;
+  page: number;
+  onPageChange: (page: number) => void;
+}) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [pipTaps, setPipTaps] = useState(0);
-  const [page, setPage] = useState(0);
   const { showWords } = useSettings();
   const currentPlaces = PLACE_PAGES[page] ?? PLACE_PAGES[0];
 
@@ -221,7 +228,7 @@ export function HubWorld({ onOpen }: { onOpen: (place: PlaceId) => void }) {
               if (page === 0) return;
               sfxSparkle();
               vibrate();
-              setPage((current) => Math.max(0, current - 1));
+              onPageChange(Math.max(0, page - 1));
             }}
             className="grid h-14 w-14 place-items-center rounded-full border-4 border-white/80 bg-white/35 text-white shadow-lg transition-transform active:scale-90 disabled:opacity-25"
           >
@@ -261,9 +268,7 @@ export function HubWorld({ onOpen }: { onOpen: (place: PlaceId) => void }) {
               if (page === PLACE_PAGES.length - 1) return;
               sfxSparkle();
               vibrate();
-              setPage((current) =>
-                Math.min(PLACE_PAGES.length - 1, current + 1),
-              );
+              onPageChange(Math.min(PLACE_PAGES.length - 1, page + 1));
             }}
             className="grid h-14 w-14 place-items-center rounded-full border-4 border-white bg-[#F79420] text-white shadow-[0_6px_0_rgba(0,0,0,0.14)] transition-transform active:scale-90 disabled:opacity-25"
           >

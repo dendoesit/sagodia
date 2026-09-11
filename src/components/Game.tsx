@@ -31,6 +31,7 @@ const GAMES: Record<PlaceId, React.ComponentType<{ onHome: () => void }>> = {
 export function Game() {
   const [started, setStarted] = useState(false);
   const [place, setPlace] = useState<PlaceId | null>(null);
+  const [hubPage, setHubPage] = useState(0);
 
   useEffect(() => {
     initAudio();
@@ -74,7 +75,11 @@ export function Game() {
           <Active onHome={goHome} />
         </div>
       ) : (
-        <HubWorld onOpen={setPlace} />
+        <HubWorld
+          onOpen={setPlace}
+          page={hubPage}
+          onPageChange={setHubPage}
+        />
       )}
     </main>
   );
