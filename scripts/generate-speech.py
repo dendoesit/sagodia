@@ -25,8 +25,12 @@ ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "public" / "audio"
 MANIFEST = ROOT / "src" / "lib" / "speechClips.generated.ts"
 OFFLINE_MANIFEST = OUTPUT / "manifest.json"
-VOICE = "en-US-JennyNeural"
-RATE = "-12%"
+VOICE_CONFIG = OUTPUT / "voice.json"
+# Libby is a friendly British voice. A near-natural pace avoids the stretched,
+# robotic sound that the previous US voice developed on isolated words.
+VOICE = "en-GB-LibbyNeural"
+RATE = "-5%"
+PITCH = "+2Hz"
 
 ANIMALS = {
     "Cow": "Moo!",
@@ -187,18 +191,27 @@ def build_lines() -> list[str]:
 async def generate() -> None:
     OUTPUT.mkdir(parents=True, exist_ok=True)
     entries: dict[str, str] = {}
+    expected_config = {"voice": VOICE, "rate": RATE, "pitch": PITCH}
+    try:
+        current_config = json.loads(VOICE_CONFIG.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError):
+        current_config = None
+    regenerate = current_config != expected_config
+    if regenerate:
+        print(f"Regenerating the library with {VOICE} at {RATE}, pitch {PITCH}")
 
     for index, text in enumerate(build_lines(), start=1):
         normalized = key(text)
         filename = f"{slug(text)}.mp3"
         destination = OUTPUT / filename
         entries[normalized] = f"/audio/{filename}"
-        if not destination.exists():
+        if regenerate or not destination.exists():
             print(f"[{index:03}] {text}")
             await edge_tts.Communicate(
                 text=text,
                 voice=VOICE,
                 rate=RATE,
+                pitch=PITCH,
             ).save(str(destination))
 
     source = (
@@ -210,6 +223,10 @@ async def generate() -> None:
     MANIFEST.write_text(source, encoding="utf-8")
     OFFLINE_MANIFEST.write_text(
         json.dumps(sorted(set(entries.values())), indent=2) + "\n",
+        encoding="utf-8",
+    )
+    VOICE_CONFIG.write_text(
+        json.dumps(expected_config, indent=2) + "\n",
         encoding="utf-8",
     )
 

@@ -51,7 +51,8 @@ arrow opens a second page of games:
   that can stall the following pronunciation check.
 - **Small, offline assets.** Characters, food and scenery are hand-written
   SVG. The learning vocabulary uses a small library of bundled neural-voice
-  clips; browser speech is only a fallback for an unusual dynamic sentence.
+  clips in a warm British voice; browser speech is only a fallback for an
+  unusual dynamic sentence.
   Sound effects are synthesised with the Web Audio API.
 
 ### Grown-up settings
@@ -79,7 +80,7 @@ Open http://localhost:43127. Other scripts: `npm run build`, `npm run lint`,
 from `scripts/generate-icons.mjs`.
 
 The checked-in voice clips are ready to use. To regenerate them with the same
-warm, slightly slowed voice:
+friendly British voice:
 
 ```bash
 python3 -m pip install edge-tts==7.2.8
