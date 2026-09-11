@@ -93,11 +93,8 @@ export function FarmGame({ onHome }: { onHome: () => void }) {
     }
     setSayItem(selected);
     setSaying(true);
-    // Starts synchronously in the animal tap. SayAlong then waits for this
-    // exact prompt to finish before it arms the microphone.
-    speakTapped(`repeat-${animal.id}`, [
-      `${animal.word}. Now you say it.`,
-    ]);
+    // Say only the target word; the child gets a short turn immediately after.
+    speakTapped(`repeat-${animal.id}`, [animal.word]);
   };
 
   return (

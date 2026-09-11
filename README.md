@@ -14,12 +14,12 @@ Tap Pip the fox in the corner for a greeting, then pick a place:
 
 | Place            | Words taught                      | How you play                                                            |
 | ---------------- | --------------------------------- | ----------------------------------------------------------------------- |
-| **Farm**         | cow, pig, sheep, duck, cat, dog, horse, chicken | Tap an animal — the app says its name once, then visibly listens while a ring breathes with the child's voice. The recognised word must match before a star is awarded. There is no separate microphone button. |
+| **Farm**         | cow, pig, sheep, duck, cat, dog, horse, chicken | Tap an animal, hear its name, and repeat it immediately. The recognised word earns a star; silence reveals Continue after a short turn, and Home/X always exit. |
 | **Kitchen**      | apple, banana, orange, strawberry, carrot, broccoli, cookie, grapes | Match the food pictured in “Munchie wants a banana.” Tap Munchie to hear the request. A wrong snack is named, then gently spat back while Munchie shakes his head. |
 | **Paint tent**   | red, blue, yellow, green, orange, purple, pink, brown | Pick a colour, tap a part of the picture to fill it. Eleven pictures, and the yellow arrow moves on to the next one. |
 | **Balloons**     | counting, with no upper limit     | Pop balloons drifting up from below the screen. The count keeps climbing and cheers every ten; letting one escape off the top starts it over. |
 | **Workshop**     | circle, square, triangle, star, heart | Tap a shape, tap its matching hole.                                  |
-| **Station**      | one, two, three, four             | Couple the wagons in order and the train pulls out of the station. Each wagon carries its numeral *and* that many dots, because the dots are what a three-year-old can already count. |
+| **Station**      | one, two, three, four             | Couple the wagons in order and travel through four rotating courses: meadow, coast, mountains, and moonlight. |
 | **Listen & find** | animals and colours              | The ear button starts a gentle three-round listening game in the farm or paint tent. |
 
 ### Design rules

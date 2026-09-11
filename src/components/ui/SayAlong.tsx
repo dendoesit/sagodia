@@ -31,11 +31,11 @@ export type SayItem = {
   Art: React.ComponentType<{ className?: string; title?: string }>;
 };
 
-type Phase = "prompt" | "listening" | "cheer";
+type Phase = "prompt" | "listening" | "timeout" | "cheer";
 
 const STARS_PER_ROUND = 5;
-/** How long to wait before gently saying the word again. */
-const NUDGE_MS = 6500;
+/** A short turn: hear the word, repeat it, or continue without getting stuck. */
+const RESPONSE_MS = 3200;
 /** Safety net: iOS sometimes never fires `onend` for an utterance. */
 const PROMPT_FALLBACK_MS = 3400;
 
@@ -79,7 +79,6 @@ export function SayAlong({
   const stopRecognition = useRef<(() => void) | null>(null);
   const stopBusySubscription = useRef<(() => void) | null>(null);
   const matched = useRef(false);
-  const emptyRecognitionAttempts = useRef(0);
   const alive = useRef(true);
   /** Breaks the cycle: presenting listens, and listening presents the next one. */
   const presentRef = useRef<(next: SayItem) => void>(() => {});
@@ -224,15 +223,10 @@ export function SayAlong({
           }
 
           if (!heardSpeech) {
-            emptyRecognitionAttempts.current += 1;
-            if (emptyRecognitionAttempts.current >= 2) {
-              disarm();
-              setRecognitionFailed(true);
-              setMicReady(false);
-              return;
-            }
-          } else {
-            emptyRecognitionAttempts.current = 0;
+            disarm();
+            phaseRef.current = "timeout";
+            setPhase("timeout");
+            return;
           }
 
           let restarted = false;
@@ -261,18 +255,11 @@ export function SayAlong({
     timers.current.push(
       window.setTimeout(() => {
         if (!alive.current || phaseRef.current !== "listening") return;
-        if (strictChecking) {
-          // Stable iOS releases can leave recognition alive without result,
-          // error, or end events. Never trap the child in that state.
-          endRecognition();
-          disarm();
-          setRecognitionFailed(true);
-          setMicReady(false);
-        } else {
-          speak(word.word, { rate: 0.85 });
-          arm();
-        }
-      }, NUDGE_MS),
+        endRecognition();
+        disarm();
+        phaseRef.current = "timeout";
+        setPhase("timeout");
+      }, RESPONSE_MS),
     );
   }, [
     arm,
@@ -289,7 +276,6 @@ export function SayAlong({
       endRecognition();
       disarm();
       itemRef.current = next;
-      emptyRecognitionAttempts.current = 0;
       setItem(next);
       phaseRef.current = "prompt";
       setPhase("prompt");
@@ -300,9 +286,7 @@ export function SayAlong({
         started = true;
         beginListening();
       };
-      // The name once, then the invitation — short enough that a three-year-old
-      // is still holding the word when it is their turn.
-      speak(`${next.word}. Now you say it.`, { onEnd: go });
+      speak(next.word, { onEnd: go });
       timers.current.push(window.setTimeout(go, PROMPT_FALLBACK_MS));
     },
     [beginListening, clearTimers, disarm, endRecognition],
@@ -367,10 +351,16 @@ export function SayAlong({
     };
   }, []);
 
+  const continueRound = useCallback(() => {
+    if (!alive.current) return;
+    clearTimers();
+    endRecognition();
+    disarm();
+    presentRef.current(pickRandom(items, itemRef.current));
+  }, [clearTimers, disarm, endRecognition, items]);
+
   const Art = item.Art;
   const listening = phase === "listening";
-  const manualConfirmation =
-    checkPronunciation && (!recognitionSupported || recognitionFailed);
   const automaticListening =
     micReady &&
     (!checkPronunciation || (recognitionSupported && !recognitionFailed));
@@ -425,10 +415,32 @@ export function SayAlong({
             </p>
           ) : null}
 
-          {automaticListening ? (
+          {phase === "timeout" ? (
+            <button
+              type="button"
+              aria-label="Continue to another animal"
+              onPointerDown={(event) => {
+                event.preventDefault();
+                continueRound();
+              }}
+              className="anim-pop-in flex min-h-20 items-center gap-3 rounded-full border-4 border-white bg-[#F79420] px-6 py-3 text-xl font-bold text-white shadow-[0_8px_0_rgba(0,0,0,0.2)] transition-transform active:scale-95"
+            >
+              <span>Continue</span>
+              <svg viewBox="0 0 100 100" className="h-10 w-10" aria-hidden>
+                <path
+                  d="M20 50 H75 M55 28 L78 50 L55 72"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={10}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          ) : automaticListening ? (
             <>
               <div
-                aria-label={listening ? "Listening now" : "Getting ready"}
+                aria-label={listening ? "Your turn" : "Getting ready"}
                 className={`flex h-16 w-28 items-center justify-center gap-1.5 rounded-3xl border-4 transition-colors sm:h-20 sm:w-32 ${
                   listening
                     ? "border-white bg-[#5FAF4E]"
@@ -482,16 +494,6 @@ export function SayAlong({
               </svg>
             </button>
           )}
-
-          <p className="text-base font-semibold text-white/90 drop-shadow sm:text-lg">
-            {phase === "prompt"
-              ? "Listen…"
-              : listening
-                ? manualConfirmation
-                  ? "Ask a grown-up!"
-                  : "Your turn!"
-                : "Yes!"}
-          </p>
 
           <div className="flex items-center justify-center gap-1.5">
             {Array.from({ length: STARS_PER_ROUND }, (_, i) => (
