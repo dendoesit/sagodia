@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import { HubWorld } from "@/components/HubWorld";
 import { StartGate } from "@/components/StartGate";
+import { ActionGame } from "@/components/games/ActionGame";
 import { BalloonGame } from "@/components/games/BalloonGame";
+import { CleanupGame } from "@/components/games/CleanupGame";
+import { DressGame } from "@/components/games/DressGame";
 import { FarmGame } from "@/components/games/FarmGame";
 import { KitchenGame } from "@/components/games/KitchenGame";
 import { PaintGame } from "@/components/games/PaintGame";
@@ -20,6 +23,9 @@ const GAMES: Record<PlaceId, React.ComponentType<{ onHome: () => void }>> = {
   balloons: BalloonGame,
   shapes: ShapesGame,
   station: TrainGame,
+  dress: DressGame,
+  cleanup: CleanupGame,
+  actions: ActionGame,
 };
 
 export function Game() {

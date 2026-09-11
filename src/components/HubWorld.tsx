@@ -3,12 +3,15 @@
 import { useState } from "react";
 import { Pip } from "@/components/art/friends";
 import {
+  ActionPlaygroundScene,
   BalloonCartScene,
   BarnScene,
+  DressUpScene,
   PaintTentScene,
   ShapeWorkshopScene,
   SnackCartScene,
   StationScene,
+  ToyCleanupScene,
 } from "@/components/art/places";
 import { HoldButton, SettingsSheet } from "@/components/ui/SettingsSheet";
 import { sfxDoor, sfxSparkle, speak, vibrate } from "@/lib/audio";
@@ -25,7 +28,12 @@ const SCENES: Record<
   balloons: BalloonCartScene,
   shapes: ShapeWorkshopScene,
   station: StationScene,
+  dress: DressUpScene,
+  cleanup: ToyCleanupScene,
+  actions: ActionPlaygroundScene,
 };
+
+const PLACE_PAGES = [PLACES.slice(0, 6), PLACES.slice(6)];
 
 const PIP_LINES = [
   "Hello! I am Pip.",
@@ -68,7 +76,9 @@ function Cloud({
 export function HubWorld({ onOpen }: { onOpen: (place: PlaceId) => void }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [pipTaps, setPipTaps] = useState(0);
+  const [page, setPage] = useState(0);
   const { showWords } = useSettings();
+  const currentPlaces = PLACE_PAGES[page] ?? PLACE_PAGES[0];
 
   const openPlace = (id: PlaceId) => {
     const place = PLACES.find((item) => item.id === id);
@@ -153,12 +163,17 @@ export function HubWorld({ onOpen }: { onOpen: (place: PlaceId) => void }) {
           grid is at least as tall as the screen so a short list still fills
           it instead of hugging the top. */}
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3">
-          <div className="grid min-h-full grid-cols-2 gap-2.5 [grid-auto-rows:minmax(9rem,1fr)] landscape:grid-cols-3">
-            {PLACES.map((place, index) => {
+          <div
+            key={page}
+            data-games-page={page + 1}
+            className="anim-pop-in grid min-h-full grid-cols-2 gap-2.5 [grid-auto-rows:minmax(9rem,1fr)] landscape:grid-cols-3"
+          >
+            {currentPlaces.map((place, index) => {
               const Scene = SCENES[place.id];
               // An odd number of places would leave a hole in the last row.
               const wide =
-                PLACES.length % 2 === 1 && index === PLACES.length - 1;
+                currentPlaces.length % 2 === 1 &&
+                index === currentPlaces.length - 1;
               return (
                 <button
                   key={place.id}
@@ -192,6 +207,78 @@ export function HubWorld({ onOpen }: { onOpen: (place: PlaceId) => void }) {
             })}
           </div>
         </div>
+
+        <nav
+          aria-label="Game pages"
+          className="flex shrink-0 items-center justify-center gap-3 px-3 pb-3"
+        >
+          <button
+            type="button"
+            aria-label="Previous games"
+            disabled={page === 0}
+            onPointerDown={(event) => {
+              event.preventDefault();
+              if (page === 0) return;
+              sfxSparkle();
+              vibrate();
+              setPage((current) => Math.max(0, current - 1));
+            }}
+            className="grid h-14 w-14 place-items-center rounded-full border-4 border-white/80 bg-white/35 text-white shadow-lg transition-transform active:scale-90 disabled:opacity-25"
+          >
+            <svg viewBox="0 0 100 100" className="h-8 w-8" aria-hidden>
+              <path
+                d="M62 22 L34 50 L62 78"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={12}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+
+          <div className="flex items-center gap-2 rounded-full bg-white/55 px-4 py-2 shadow">
+            {PLACE_PAGES.map((_, index) => (
+              <span
+                key={index}
+                aria-hidden
+                className={`h-3 w-3 rounded-full ${
+                  index === page ? "bg-[#F79420]" : "bg-white"
+                }`}
+              />
+            ))}
+            <span className="sr-only">
+              Games page {page + 1} of {PLACE_PAGES.length}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            aria-label="Next games"
+            disabled={page === PLACE_PAGES.length - 1}
+            onPointerDown={(event) => {
+              event.preventDefault();
+              if (page === PLACE_PAGES.length - 1) return;
+              sfxSparkle();
+              vibrate();
+              setPage((current) =>
+                Math.min(PLACE_PAGES.length - 1, current + 1),
+              );
+            }}
+            className="grid h-14 w-14 place-items-center rounded-full border-4 border-white bg-[#F79420] text-white shadow-[0_6px_0_rgba(0,0,0,0.14)] transition-transform active:scale-90 disabled:opacity-25"
+          >
+            <svg viewBox="0 0 100 100" className="h-8 w-8" aria-hidden>
+              <path
+                d="M38 22 L66 50 L38 78"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={12}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+        </nav>
       </div>
 
       <SettingsSheet

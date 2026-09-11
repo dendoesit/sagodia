@@ -50,6 +50,17 @@ FOODS = [
 ]
 COLORS = ["Red", "Blue", "Yellow", "Green", "Orange", "Purple", "Pink", "Brown"]
 SHAPES = ["Circle", "Square", "Triangle", "Star", "Heart"]
+DRESSING = [
+    ("Hat", "Red"),
+    ("Shirt", "Blue"),
+    ("Shoes", "Yellow"),
+]
+TOY_CLEANUP = [
+    ("Ball", "Blue"),
+    ("Car", "Red"),
+    ("Blocks", "Green"),
+]
+ACTIONS = ["Jump", "Spin", "Wave", "Stomp"]
 NUMBERS = [
     "One",
     "Two",
@@ -107,8 +118,20 @@ def build_lines() -> list[str]:
         *FOODS,
         *COLORS,
         *SHAPES,
+        *(item for item, _ in DRESSING),
+        *(toy for toy, _ in TOY_CLEANUP),
+        *ACTIONS,
         *NUMBERS,
     }
+
+    for item, color in DRESSING:
+        lines.add(f"Put on the {color.lower()} {item.lower()}.")
+
+    for toy, color in TOY_CLEANUP:
+        lines.add(f"Put the {toy.lower()} in the {color.lower()} box.")
+
+    for action in ACTIONS:
+        lines.add(f"Make Pip {action.lower()}.")
 
     for animal, sound in ANIMALS.items():
         lower = animal.lower()

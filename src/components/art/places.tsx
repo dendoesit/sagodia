@@ -377,3 +377,48 @@ export function ShapeWorkshopScene(props: ArtProps) {
     </Art>
   );
 }
+
+export function DressUpScene(props: ArtProps) {
+  return (
+    <Art {...props}>
+      <circle cx={50} cy={46} r={23} fill="#FBAF63" stroke={OUTLINE} strokeWidth={3} />
+      <path d="M28 32 L23 10 L42 25 Z M72 32 L77 10 L58 25 Z" fill="#F79E52" stroke={OUTLINE} strokeWidth={3} strokeLinejoin="round" />
+      <circle cx={42} cy={44} r={3.5} fill={OUTLINE} />
+      <circle cx={58} cy={44} r={3.5} fill={OUTLINE} />
+      <path d="M43 57 Q50 63 57 57" fill="none" stroke={OUTLINE} strokeWidth={2.5} strokeLinecap="round" />
+      <path d="M24 28 Q50 10 76 28 L70 35 Q50 25 30 35 Z" fill="#E4574C" stroke={OUTLINE} strokeWidth={3} strokeLinejoin="round" />
+      <path d="M31 65 L69 65 L77 90 L23 90 Z" fill="#4F8FE0" stroke={OUTLINE} strokeWidth={3} strokeLinejoin="round" />
+      <circle cx={50} cy={74} r={3} fill="#FFD84D" />
+    </Art>
+  );
+}
+
+export function ToyCleanupScene(props: ArtProps) {
+  return (
+    <Art {...props}>
+      <path d="M14 43 L86 43 L80 90 L20 90 Z" fill="#4F8FE0" stroke={OUTLINE} strokeWidth={3.5} strokeLinejoin="round" />
+      <path d="M10 36 H90 V49 H10 Z" fill="#77B5F3" stroke={OUTLINE} strokeWidth={3.5} strokeLinejoin="round" />
+      <circle cx={34} cy={31} r={14} fill="#E4574C" stroke={OUTLINE} strokeWidth={3} />
+      <path d="M21 31 H47 M34 18 V44" stroke="#FFD84D" strokeWidth={3} />
+      <rect x={52} y={18} width={18} height={18} rx={3} fill="#FFD84D" stroke={OUTLINE} strokeWidth={3} />
+      <rect x={68} y={27} width={16} height={16} rx={3} fill="#5FAF4E" stroke={OUTLINE} strokeWidth={3} />
+      <path d="M34 68 H66" stroke="#FFFFFF" strokeWidth={5} strokeLinecap="round" opacity={0.75} />
+    </Art>
+  );
+}
+
+export function ActionPlaygroundScene(props: ArtProps) {
+  return (
+    <Art {...props}>
+      <path d="M17 72 Q50 88 83 72" fill="none" stroke="#5FAF4E" strokeWidth={6} strokeLinecap="round" />
+      <circle cx={50} cy={40} r={20} fill="#FBAF63" stroke={OUTLINE} strokeWidth={3} />
+      <path d="M33 26 L29 9 L43 23 Z M67 26 L71 9 L57 23 Z" fill="#F79E52" stroke={OUTLINE} strokeWidth={3} strokeLinejoin="round" />
+      <circle cx={43} cy={39} r={3} fill={OUTLINE} />
+      <circle cx={57} cy={39} r={3} fill={OUTLINE} />
+      <path d="M43 50 Q50 56 57 50" fill="none" stroke={OUTLINE} strokeWidth={2.5} strokeLinecap="round" />
+      <path d="M38 58 Q50 52 62 58 L67 78 H33 Z" fill="#F79E52" stroke={OUTLINE} strokeWidth={3} strokeLinejoin="round" />
+      <path d="M30 61 L14 48 M70 61 L86 48 M39 77 L31 91 M61 77 L69 91" fill="none" stroke={OUTLINE} strokeWidth={6} strokeLinecap="round" />
+      <path d="M10 24 L19 18 M82 18 L91 24 M12 38 H3 M88 38 H97" stroke="#FFD84D" strokeWidth={4} strokeLinecap="round" />
+    </Art>
+  );
+}

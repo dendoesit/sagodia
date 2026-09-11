@@ -10,7 +10,8 @@ screen so it opens full screen like a native app.
 
 ## What's in the town
 
-Tap Pip the fox in the corner for a greeting, then pick a place:
+Tap Pip the fox in the corner for a greeting, then pick a place. The orange
+arrow opens a second page of games:
 
 | Place            | Words taught                      | How you play                                                            |
 | ---------------- | --------------------------------- | ----------------------------------------------------------------------- |
@@ -20,6 +21,9 @@ Tap Pip the fox in the corner for a greeting, then pick a place:
 | **Balloons**     | counting, with no upper limit     | Pop balloons drifting up from below the screen. The count keeps climbing and cheers every ten; letting one escape off the top starts it over. |
 | **Workshop**     | circle, square, triangle, star, heart | Tap a shape, tap its matching hole.                                  |
 | **Station**      | one, two, three, four             | Couple the wagons in order and travel through four rotating courses: meadow, coast, mountains, and moonlight. |
+| **Dress Pip**    | hat, shirt, shoes, red, blue, yellow | Hear a short clothing request, then tap the matching item to dress Pip. |
+| **Toy Cleanup**  | ball, car, blocks, blue, red, green | Pick the requested toy and put it in the matching coloured box. |
+| **Actions**      | jump, spin, wave, stomp            | Tap an action to hear its verb and make Pip perform it; match the pictured action for a celebration. |
 | **Listen & find** | animals and colours              | The ear button starts a gentle three-round listening game in the farm or paint tent. |
 
 ### Design rules
@@ -113,7 +117,7 @@ src/
   app/          layout, page, web app manifest
   components/
     art/        every character, animal, food and building as inline SVG
-    games/      the six mini-games
+    games/      the nine mini-games
     ui/         shared chrome: game frame, word bubble, confetti, settings
   lib/          audio engine, settings store, word lists, find-it challenge
 ```

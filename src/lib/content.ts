@@ -8,7 +8,10 @@ export type PlaceId =
   | "paint"
   | "balloons"
   | "shapes"
-  | "station";
+  | "station"
+  | "dress"
+  | "cleanup"
+  | "actions";
 
 export type PlaceInfo = {
   id: PlaceId;
@@ -62,6 +65,27 @@ export const PLACES: PlaceInfo[] = [
     label: "Train",
     invitation: "Build the train!",
     gradient: "from-[#A9C4E8] to-[#4F6FA8]",
+  },
+  {
+    id: "dress",
+    word: "Dress Pip",
+    label: "Dress Pip",
+    invitation: "Hat, shirt and shoes!",
+    gradient: "from-[#B9A7F7] to-[#7C5CC4]",
+  },
+  {
+    id: "cleanup",
+    word: "Toy cleanup",
+    label: "Toy Cleanup",
+    invitation: "Put every toy away!",
+    gradient: "from-[#8FE0D3] to-[#35A89B]",
+  },
+  {
+    id: "actions",
+    word: "Action playground",
+    label: "Actions",
+    invitation: "Jump, spin and wave!",
+    gradient: "from-[#FFD67A] to-[#F18A45]",
   },
 ];
 
