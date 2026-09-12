@@ -105,7 +105,11 @@ export function FrogGame({ onHome }: { onHome: () => void }) {
           </div>
 
           <div className="mt-3 flex h-32 shrink-0 items-center justify-center gap-5 rounded-[30px] border-4 border-white/60 bg-white/28 px-4 shadow-[0_7px_0_rgba(35,101,118,0.14)] backdrop-blur-sm">
-            <SpeakCommand word={command.word} onSuccess={perform} />
+            <SpeakCommand
+              key={command.word}
+              word={command.word}
+              onSuccess={perform}
+            />
             <div className="grid grid-cols-4 gap-1.5" aria-label={`${commandIndex + 1} of ${COMMANDS.length} commands`}>
               {COMMANDS.map((item, index) => (
                 <span

@@ -122,7 +122,11 @@ export function FlowerGame({ onHome }: { onHome: () => void }) {
           </div>
 
           <div className="mt-3 flex h-32 shrink-0 items-center justify-center gap-5 rounded-[30px] border-4 border-white/60 bg-white/32 px-4 shadow-[0_7px_0_rgba(62,111,52,0.14)] backdrop-blur-sm">
-            <SpeakCommand word={step.word} onSuccess={grow} />
+            <SpeakCommand
+              key={step.word}
+              word={step.word}
+              onSuccess={grow}
+            />
             <div className="flex gap-1.5" aria-label={`Step ${stepIndex + 1} of ${STEPS.length}`}>
               {STEPS.map((item, index) => (
                 <span

@@ -127,11 +127,6 @@ export function SpeakCommand({
   }, [clearTurn, moveTo, strict, succeed, word]);
 
   useEffect(() => {
-    clearTurn();
-    moveTo("idle");
-  }, [clearTurn, moveTo, word]);
-
-  useEffect(() => {
     alive.current = true;
     return () => {
       alive.current = false;
