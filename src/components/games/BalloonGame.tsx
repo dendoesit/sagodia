@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Celebration } from "@/components/ui/Celebration";
 import { PlaceFrame } from "@/components/ui/PlaceFrame";
 import {
-  enqueueLatestSpeech,
+  enqueueSpeech,
   sfxFanfare,
   sfxMiss,
   sfxPop,
@@ -229,9 +229,12 @@ export function BalloonGame({ onHome }: { onHome: () => void }) {
     setCount(next);
     setBest((current) => Math.max(current, next));
 
-    // Keep the current word intact, but replace stale queued numbers with the
-    // latest score so rapid popping never leaves narration far behind.
-    enqueueLatestSpeech([numberWord(next)], { rate: 1.12 });
+    // Every pop joins one ordered queue. Counts never interrupt or replace one
+    // another, and the next number starts as soon as the previous clip ends.
+    enqueueSpeech([numberWord(next)], {
+      rate: 1.28,
+      finishGapMs: 0,
+    });
     sfxPop();
     vibrate(20);
 

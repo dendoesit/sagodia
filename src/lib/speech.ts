@@ -9,6 +9,10 @@ export type SpeakOptions = {
   rate?: number;
   pitch?: number;
   delay?: number;
+  /** Delay between parts of one spoken phrase. */
+  partGapMs?: number;
+  /** Delay after the final word before the next queued phrase starts. */
+  finishGapMs?: number;
   onEnd?: () => void;
 };
 
@@ -140,6 +144,12 @@ function clearCurrent() {
 
 /** Warm, clear voices used only when a sentence has no bundled clip. */
 const PREFERRED_VOICES = [
+  "Libby",
+  "Sonia",
+  "Maisie",
+  "Serena",
+  "Kate",
+  "Daniel",
   "Samantha",
   "Ava",
   "Allison",
@@ -164,6 +174,9 @@ function pickVoice(): SpeechSynthesisVoice | null {
   }
   return (
     english.find((voice) =>
+      voice.lang.replace("_", "-").toLowerCase().startsWith("en-gb"),
+    ) ??
+    english.find((voice) =>
       voice.lang.replace("_", "-").toLowerCase().startsWith("en-us"),
     ) ??
     english[0] ??
@@ -185,7 +198,7 @@ function speakWithBrowser(
   const utterance = new SpeechSynthesisUtterance(text);
   const voice = pickVoice();
   if (voice) utterance.voice = voice;
-  utterance.lang = voice?.lang ?? "en-US";
+  utterance.lang = voice?.lang ?? "en-GB";
   utterance.rate = Math.max(
     0.5,
     Math.min(1.25, 0.82 * speechRate * rate),
@@ -224,7 +237,7 @@ function playWithMedia(
     speakWithBrowser(text, rate, pitch, done);
   };
   player.src = src;
-  player.playbackRate = Math.max(0.65, Math.min(1.15, speechRate * rate));
+  player.playbackRate = Math.max(0.65, Math.min(1.35, speechRate * rate));
   player.volume = 1;
   player.load();
 
@@ -267,7 +280,7 @@ function playPart(
       source.buffer = buffer;
       source.playbackRate.value = Math.max(
         0.65,
-        Math.min(1.15, speechRate * rate),
+        Math.min(1.35, speechRate * rate),
       );
       source.connect(context.destination);
       source.onended = () => {
@@ -299,6 +312,8 @@ function speakBatch(parts: string[], options: SpeakOptions = {}) {
     rate = 1,
     pitch = 1.05,
     delay = 0,
+    partGapMs = BETWEEN_WORDS_MS,
+    finishGapMs = AFTER_PHRASE_MS,
     onEnd,
   } = options;
   const queue = parts.map((part) => part.trim()).filter(Boolean);
@@ -324,10 +339,13 @@ function speakBatch(parts: string[], options: SpeakOptions = {}) {
   };
   const advance = () => {
     if (id !== batchId) return;
-    timer = window.setTimeout(
-      index < queue.length ? next : finish,
-      index < queue.length ? BETWEEN_WORDS_MS : AFTER_PHRASE_MS,
-    );
+    const continueSpeaking = index < queue.length ? next : finish;
+    const gap = index < queue.length ? partGapMs : finishGapMs;
+    if (gap <= 0) {
+      continueSpeaking();
+      return;
+    }
+    timer = window.setTimeout(continueSpeaking, gap);
   };
   const next = () => {
     if (id !== batchId) return;
