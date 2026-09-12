@@ -84,21 +84,23 @@ export function FlowerGarden({
       ) : null}
 
       {stage >= 4 ? (
-        <g className="anim-pop-in" transform="translate(90 37)">
-          {[0, 60, 120, 180, 240, 300].map((angle) => (
-            <ellipse
-              key={angle}
-              cx={0}
-              cy={-18}
-              rx={10}
-              ry={20}
-              fill={angle % 120 === 0 ? "#FF8FB1" : "#E95E92"}
-              stroke={OUTLINE}
-              strokeWidth={2.5}
-              transform={`rotate(${angle})`}
-            />
-          ))}
-          <circle cx={0} cy={0} r={13} fill="#FFD84D" stroke={OUTLINE} strokeWidth={3} />
+        <g transform="translate(90 37)">
+          <g className="anim-pop-in">
+            {[0, 60, 120, 180, 240, 300].map((angle) => (
+              <ellipse
+                key={angle}
+                cx={0}
+                cy={-18}
+                rx={10}
+                ry={20}
+                fill={angle % 120 === 0 ? "#FF8FB1" : "#E95E92"}
+                stroke={OUTLINE}
+                strokeWidth={2.5}
+                transform={`rotate(${angle})`}
+              />
+            ))}
+            <circle cx={0} cy={0} r={13} fill="#FFD84D" stroke={OUTLINE} strokeWidth={3} />
+          </g>
         </g>
       ) : null}
     </svg>
