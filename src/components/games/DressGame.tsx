@@ -27,7 +27,6 @@ type Clothing = {
 
 type Outfit = {
   id: string;
-  label: string;
   background: string;
   floor: string;
   bubbleTone: string;
@@ -37,7 +36,6 @@ type Outfit = {
 const OUTFITS: Outfit[] = [
   {
     id: "playtime",
-    label: "Playtime",
     background: "from-[#DCCEFF] via-[#B9A7F7] to-[#8C6DD1]",
     floor: "#7658B5",
     bubbleTone: "#6C4EB5",
@@ -59,7 +57,6 @@ const OUTFITS: Outfit[] = [
   },
   {
     id: "rainy-day",
-    label: "Rainy Day",
     background: "from-[#D8F1FF] via-[#91CFE8] to-[#5C9FBD]",
     floor: "#4F89A5",
     bubbleTone: "#276A89",
@@ -86,7 +83,6 @@ const OUTFITS: Outfit[] = [
   },
   {
     id: "party-time",
-    label: "Party Time",
     background: "from-[#FFE0EE] via-[#FFB8D2] to-[#C879B4]",
     floor: "#A85A96",
     bubbleTone: "#9C3E7E",
@@ -237,21 +233,6 @@ export function DressGame({ onHome }: { onHome: () => void }) {
               dressed > 0 ? "anim-wiggle" : "anim-bob"
             }`}
           >
-            <span className="absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-full border border-white/60 bg-white/75 px-3 py-1 text-xs font-bold text-[#2F2A26]/70 shadow-sm backdrop-blur-sm">
-              <span>{outfit.label}</span>
-              <span className="flex gap-1" aria-hidden>
-                {OUTFITS.map((option, index) => (
-                  <span
-                    key={option.id}
-                    className={`h-1.5 w-1.5 rounded-full ${
-                      index === outfitIndex
-                        ? "bg-[#F79420]"
-                        : "bg-[#2F2A26]/20"
-                    }`}
-                  />
-                ))}
-              </span>
-            </span>
             <span className="pointer-events-none absolute inset-x-[18%] bottom-[3%] h-[10%] rounded-[50%] bg-[#4B347C]/20 blur-sm" />
             <Pip className="h-full w-full drop-shadow-xl" title="Pip" />
             <PipOutfit worn={worn} className="pointer-events-none absolute inset-0 h-full w-full" />
