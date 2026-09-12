@@ -166,6 +166,9 @@ export function CleanupGame({ onHome }: { onHome: () => void }) {
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-linear-to-b from-[#C7F5EE] via-[#8FE0D3] to-[#35A89B]">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[68%] opacity-45 [background:repeating-linear-gradient(90deg,rgba(255,255,255,0.18)_0_30px,transparent_30px_60px)]" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[36%] bg-[#4B9D83]/55" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-[36%] h-3 bg-white/30 shadow-[0_4px_0_rgba(47,42,38,0.08)]" />
       <PlaceFrame
         onHome={onHome}
         onAsk={sayRequest}
@@ -181,7 +184,7 @@ export function CleanupGame({ onHome }: { onHome: () => void }) {
         bubbleTone="#217B72"
       >
         <div className="flex min-h-0 flex-1 flex-col gap-3 px-3 pb-3">
-          <div className="grid min-h-0 flex-1 grid-cols-3 gap-2 rounded-[30px] border-4 border-white/60 bg-white/25 p-2 sm:gap-4">
+          <div className="grid min-h-0 flex-1 grid-cols-3 gap-2 rounded-[32px] border-[5px] border-white/70 bg-white/35 p-2 shadow-[inset_0_5px_18px_rgba(34,111,102,0.1),0_9px_0_rgba(34,111,102,0.16)] backdrop-blur-[2px] sm:gap-4">
             {TOYS.map((toy) => (
               <button
                 key={toy.id}
@@ -193,7 +196,7 @@ export function CleanupGame({ onHome }: { onHome: () => void }) {
                   event.preventDefault();
                   chooseToy(toy);
                 }}
-                className={`grid min-h-0 place-items-center rounded-[24px] border-4 bg-white/70 p-1 shadow-[0_6px_0_rgba(0,0,0,0.13)] transition-all active:scale-90 disabled:opacity-25 ${
+                className={`relative grid min-h-0 place-items-center overflow-hidden rounded-[24px] border-4 bg-linear-to-br from-white/90 to-[#E5FAF6]/65 p-1 shadow-[0_6px_0_rgba(34,111,102,0.16)] transition-all active:translate-y-1 active:scale-90 active:shadow-none disabled:opacity-25 ${
                   selected?.id === toy.id
                     ? "-translate-y-2 border-[#FFD22E]"
                     : "border-white"
@@ -203,6 +206,7 @@ export function CleanupGame({ onHome }: { onHome: () => void }) {
                     : ""
                 }`}
               >
+                <span className="pointer-events-none absolute left-[10%] top-[8%] h-[18%] w-[45%] rounded-full bg-white/70 blur-sm" />
                 <ToyGlyph
                   toy={toy.id}
                   className="h-full max-h-40 w-full"
@@ -212,7 +216,7 @@ export function CleanupGame({ onHome }: { onHome: () => void }) {
             ))}
           </div>
 
-          <div className="grid h-[34%] min-h-32 shrink-0 grid-cols-3 gap-2 rounded-[30px] border-4 border-white/60 bg-[#B98A61]/30 p-2 sm:gap-4">
+          <div className="grid h-[34%] min-h-32 shrink-0 grid-cols-3 gap-2 rounded-[32px] border-[5px] border-white/65 bg-[#2C7568]/28 p-2 shadow-[inset_0_5px_16px_rgba(28,94,84,0.2),0_9px_0_rgba(28,94,84,0.16)] sm:gap-4">
             {BOXES.map((box) => {
               const stored = TOYS.find(
                 (toy) => toy.box === box.id && placed[toy.id],
@@ -227,7 +231,7 @@ export function CleanupGame({ onHome }: { onHome: () => void }) {
                     event.preventDefault();
                     chooseBox(box);
                   }}
-                  className={`grid min-h-0 place-items-center rounded-[24px] transition-transform active:scale-90 ${
+                  className={`grid min-h-0 place-items-center rounded-[24px] border-2 border-white/20 bg-white/8 transition-transform active:scale-90 ${
                     wrongBox === box.id ? "anim-shake" : ""
                   } ${
                     selected?.box === box.id ? "anim-hint" : ""

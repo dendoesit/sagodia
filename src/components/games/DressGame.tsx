@@ -109,6 +109,10 @@ export function DressGame({ onHome }: { onHome: () => void }) {
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-linear-to-b from-[#DCCEFF] via-[#B9A7F7] to-[#8C6DD1]">
+      <div className="pointer-events-none absolute inset-0 opacity-35 [background:repeating-linear-gradient(90deg,transparent_0_42px,rgba(255,255,255,0.22)_42px_44px)]" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[23%] bg-[#7658B5]/45" />
+      <div className="pointer-events-none absolute left-[8%] top-[18%] h-14 w-14 rounded-full bg-[#FFE066]/35 blur-xl" />
+      <div className="pointer-events-none absolute right-[7%] top-[34%] h-20 w-20 rounded-full bg-white/25 blur-2xl" />
       <PlaceFrame
         onHome={onHome}
         onAsk={sayRequest}
@@ -123,7 +127,7 @@ export function DressGame({ onHome }: { onHome: () => void }) {
         bubble={bubble}
         bubbleTone="#6C4EB5"
       >
-        <div className="flex min-h-0 flex-1 flex-col items-center gap-2 px-3 pb-3 landscape:flex-row landscape:justify-center landscape:gap-5">
+        <div className="flex min-h-0 flex-1 flex-col items-center gap-3 px-3 pb-3 landscape:flex-row landscape:justify-center landscape:gap-5">
           <button
             type="button"
             aria-label="Hear Pip's dressing request"
@@ -131,15 +135,16 @@ export function DressGame({ onHome }: { onHome: () => void }) {
               event.preventDefault();
               sayRequest();
             }}
-            className={`relative aspect-square min-h-0 flex-1 transition-transform active:scale-95 landscape:h-full landscape:flex-none ${
+            className={`relative aspect-square min-h-0 flex-1 overflow-hidden rounded-[38px] border-4 border-white/45 bg-white/18 p-2 shadow-[inset_0_0_30px_rgba(255,255,255,0.18),0_10px_0_rgba(72,48,123,0.18)] transition-transform active:scale-95 landscape:h-full landscape:flex-none ${
               dressed > 0 ? "anim-wiggle" : "anim-bob"
             }`}
           >
+            <span className="pointer-events-none absolute inset-x-[18%] bottom-[3%] h-[10%] rounded-[50%] bg-[#4B347C]/20 blur-sm" />
             <Pip className="h-full w-full drop-shadow-xl" title="Pip" />
             <PipOutfit worn={worn} className="pointer-events-none absolute inset-0 h-full w-full" />
           </button>
 
-          <div className="grid h-[28%] min-h-24 w-full max-w-2xl shrink-0 grid-cols-3 gap-2 landscape:h-full landscape:w-[44%] landscape:grid-cols-1">
+          <div className="grid h-[28%] min-h-24 w-full max-w-2xl shrink-0 grid-cols-3 gap-2 rounded-[30px] border-4 border-white/35 bg-[#65469E]/20 p-2 shadow-[inset_0_4px_14px_rgba(72,48,123,0.15)] landscape:h-full landscape:w-[44%] landscape:grid-cols-1">
             {CLOTHES.map((item) => (
               <button
                 key={item.id}
@@ -150,10 +155,11 @@ export function DressGame({ onHome }: { onHome: () => void }) {
                   event.preventDefault();
                   choose(item);
                 }}
-                className={`grid min-h-0 place-items-center rounded-[24px] border-4 border-white/75 bg-white/35 p-1 shadow-[0_6px_0_rgba(0,0,0,0.14)] transition-all active:scale-90 disabled:opacity-35 ${
+                className={`relative grid min-h-0 place-items-center overflow-hidden rounded-[22px] border-4 border-white/80 bg-linear-to-br from-white/65 to-white/25 p-1 shadow-[0_6px_0_rgba(72,48,123,0.2)] transition-all active:translate-y-1 active:scale-90 active:shadow-none disabled:opacity-35 ${
                   wrong === item.id ? "anim-shake" : ""
                 } ${target.id === item.id && !locked ? "anim-hint" : ""}`}
               >
+                <span className="pointer-events-none absolute left-[12%] top-[8%] h-[18%] w-[42%] rounded-full bg-white/35 blur-sm" />
                 <ClothingGlyph
                   item={item.id}
                   className="h-full max-h-28 w-full"

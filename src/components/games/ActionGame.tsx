@@ -101,8 +101,18 @@ export function ActionGame({ onHome }: { onHome: () => void }) {
   };
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-linear-to-b from-[#FFE9A8] via-[#FFD67A] to-[#F18A45]">
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-[#79C967]" />
+    <div className="relative h-full w-full overflow-hidden bg-linear-to-b from-[#FFF0B8] via-[#FFD67A] to-[#F5A052]">
+      <div className="pointer-events-none absolute right-[8%] top-[15%] h-20 w-20 rounded-full bg-[#FFF3A4]/70 shadow-[0_0_45px_rgba(255,232,116,0.6)]" />
+      <div className="pointer-events-none absolute left-[7%] top-[22%] h-10 w-24 rounded-full bg-white/45 blur-[2px]" />
+      <svg
+        viewBox="0 0 100 40"
+        preserveAspectRatio="none"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-[38%] w-full"
+        aria-hidden
+      >
+        <path d="M0 20 Q20 5 42 18 T78 13 T110 18 L110 40 L0 40 Z" fill="#8FD673" />
+        <path d="M0 29 Q26 15 53 29 T106 24 L106 40 L0 40 Z" fill="#6FBF5C" />
+      </svg>
       <PlaceFrame
         onHome={onHome}
         onAsk={sayRequest}
@@ -120,7 +130,7 @@ export function ActionGame({ onHome }: { onHome: () => void }) {
         bubble={bubble}
         bubbleTone="#B85C26"
       >
-        <div className="relative flex min-h-0 flex-1 flex-col items-center gap-2 px-3 pb-3 landscape:flex-row landscape:justify-center landscape:gap-6">
+        <div className="relative flex min-h-0 flex-1 flex-col items-center gap-3 px-3 pb-3 landscape:flex-row landscape:justify-center landscape:gap-6">
           <button
             type="button"
             aria-label="Hear Pip's action"
@@ -128,8 +138,10 @@ export function ActionGame({ onHome }: { onHome: () => void }) {
               event.preventDefault();
               sayRequest();
             }}
-            className="relative aspect-square min-h-0 flex-1 transition-transform active:scale-95 landscape:h-full landscape:flex-none"
+            className="relative aspect-square min-h-0 flex-1 overflow-hidden rounded-[42px] border-4 border-white/50 bg-white/18 p-2 shadow-[inset_0_0_28px_rgba(255,255,255,0.22),0_10px_0_rgba(154,91,42,0.16)] transition-transform active:scale-95 landscape:h-full landscape:flex-none"
           >
+            <span className="pointer-events-none absolute inset-x-[18%] bottom-[5%] h-[9%] rounded-[50%] bg-[#497C3D]/25 blur-sm" />
+            <span className="pointer-events-none absolute left-[14%] top-[12%] h-[30%] w-[30%] rounded-full bg-white/18 blur-xl" />
             <div
               key={motionKey}
               data-pip-action={moving?.id ?? "ready"}
@@ -152,7 +164,7 @@ export function ActionGame({ onHome }: { onHome: () => void }) {
             ) : null}
           </button>
 
-          <div className="grid h-[34%] min-h-36 w-full max-w-2xl shrink-0 grid-cols-4 gap-2 landscape:h-full landscape:w-[42%] landscape:grid-cols-2 landscape:grid-rows-2">
+          <div className="grid h-[34%] min-h-36 w-full max-w-2xl shrink-0 grid-cols-4 gap-2 rounded-[30px] border-4 border-white/45 bg-[#B96A32]/18 p-2 shadow-[inset_0_4px_14px_rgba(117,61,24,0.12)] landscape:h-full landscape:w-[42%] landscape:grid-cols-2 landscape:grid-rows-2">
             {ACTIONS.map((action) => (
               <button
                 key={action.id}
@@ -162,11 +174,12 @@ export function ActionGame({ onHome }: { onHome: () => void }) {
                   event.preventDefault();
                   act(action);
                 }}
-                className={`grid min-h-0 place-items-center rounded-[24px] border-4 border-white/80 p-1 shadow-[0_6px_0_rgba(0,0,0,0.15)] transition-transform active:scale-90 ${
+                className={`relative grid min-h-0 place-items-center overflow-hidden rounded-[22px] border-4 border-white/85 p-1 shadow-[0_6px_0_rgba(83,47,26,0.18)] transition-transform active:translate-y-1 active:scale-90 active:shadow-none ${
                   target.id === action.id ? "anim-hint" : ""
                 }`}
                 style={{ background: action.color }}
               >
+                <span className="pointer-events-none absolute left-[12%] top-[8%] h-[18%] w-[45%] rounded-full bg-white/25 blur-sm" />
                 <ActionGlyph
                   action={action.id}
                   className="h-full max-h-24 w-full"

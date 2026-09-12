@@ -96,9 +96,10 @@ export function HubWorld({
   };
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-linear-to-b from-[#7FD0F5] via-[#A9E4FF] to-[#CFF3B0]">
+    <div className="relative h-full w-full overflow-hidden bg-linear-to-b from-[#6FCBF3] via-[#A9E4FF] to-[#DDF7C7]">
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -right-6 -top-6 h-32 w-32 rounded-full bg-[#FFE066] shadow-[0_0_70px_rgba(255,224,102,0.95)]" />
+        <div className="absolute -right-8 -top-8 h-36 w-36 rounded-full border-[10px] border-[#FFF3A7]/55 bg-[#FFE066] shadow-[0_0_75px_rgba(255,224,102,0.8)]" />
+        <div className="absolute left-[18%] top-[13%] h-44 w-44 rounded-full bg-white/15 blur-3xl" />
         <Cloud top="8%" duration={54} scale={1} />
         <Cloud top="26%" duration={78} scale={0.7} />
         <svg
@@ -112,11 +113,16 @@ export function HubWorld({
             d="M0 28 Q 30 16 58 26 T 100 22 L100 40 L0 40 Z"
             fill="#6FBF5C"
           />
+          <path
+            d="M42 40 Q50 19 58 40"
+            fill="#F5D38A"
+            opacity={0.7}
+          />
         </svg>
       </div>
 
       <div className="relative flex h-full min-h-0 flex-col">
-        <header className="flex shrink-0 items-center justify-between gap-2 px-3 pt-2">
+        <header className="flex shrink-0 items-center justify-between gap-2 px-3 pt-2.5">
           <div className="flex min-w-0 items-center gap-2">
             <button
               type="button"
@@ -127,7 +133,7 @@ export function HubWorld({
                 vibrate();
                 speak(pickRandom(PIP_LINES));
               }}
-              className="h-14 w-14 shrink-0 sm:h-16 sm:w-16"
+              className="h-14 w-14 shrink-0 rounded-full drop-shadow-[0_5px_0_rgba(47,42,38,0.13)] sm:h-16 sm:w-16"
             >
               <span
                 key={pipTaps}
@@ -140,9 +146,11 @@ export function HubWorld({
                 />
               </span>
             </button>
-            <h1 className="truncate text-2xl font-bold text-white drop-shadow-[0_2px_0_rgba(0,0,0,0.18)] sm:text-3xl">
-              Sunny Town
-            </h1>
+            <div className="rounded-full border border-white/30 bg-white/15 px-3 py-1 backdrop-blur-sm">
+              <h1 className="truncate text-2xl font-bold text-white drop-shadow-[0_2px_0_rgba(0,0,0,0.18)] sm:text-3xl">
+                Sunny Town
+              </h1>
+            </div>
           </div>
           <HoldButton
             label="Grown-up settings (press and hold)"
@@ -150,7 +158,7 @@ export function HubWorld({
               sfxSparkle();
               setSettingsOpen(true);
             }}
-            className="h-12 w-12 border-4 border-white/70 bg-white/30 backdrop-blur-sm"
+            className="h-12 w-12 border-[5px] border-white/85 bg-white/35 shadow-[0_5px_0_rgba(47,42,38,0.14)] backdrop-blur-md"
           >
             <svg viewBox="0 0 100 100" className="h-6 w-6" aria-hidden>
               <path
@@ -190,22 +198,24 @@ export function HubWorld({
                     event.preventDefault();
                     openPlace(place.id);
                   }}
-                  className={`anim-pop-in relative flex min-h-0 flex-col items-center justify-center gap-1 rounded-[30px] border-4 border-white/80 bg-linear-to-br ${place.gradient} p-2 shadow-[0_8px_0_rgba(0,0,0,0.14)] transition-transform active:scale-95 ${
+                  className={`group anim-pop-in relative isolate flex min-h-0 flex-col items-center justify-center gap-1 overflow-hidden rounded-[32px] border-[5px] border-white/85 bg-linear-to-br ${place.gradient} p-2 shadow-[0_9px_0_rgba(47,42,38,0.16),0_14px_26px_rgba(47,42,38,0.1)] transition-transform active:translate-y-1 active:scale-[0.97] ${
                     wide ? "col-span-2 landscape:col-span-1" : ""
                   }`}
                   style={{ animationDelay: `${index * 70}ms` }}
                 >
-                {/* Absolutely positioned so the artwork can never push the
-                  card taller than its row — that is what let one row swallow
-                  a whole landscape screen. */}
-                <span className="relative min-h-0 w-full flex-1">
-                  <Scene
-                    className="absolute inset-0 h-full w-full"
-                    title={place.word}
-                  />
-                </span>
+                  <span className="pointer-events-none absolute -left-8 -top-8 h-28 w-40 rounded-full bg-white/20 blur-xl" />
+                  <span className="pointer-events-none absolute inset-[3px] rounded-[25px] border border-white/35" />
+                  {/* Absolutely positioned so the artwork can never push the
+                    card taller than its row — that is what let one row swallow
+                    a whole landscape screen. */}
+                  <span className="relative min-h-0 w-full flex-1">
+                    <Scene
+                      className="absolute inset-0 h-full w-full drop-shadow-[0_7px_0_rgba(47,42,38,0.12)] transition-transform duration-300 group-active:scale-95"
+                      title={place.word}
+                    />
+                  </span>
                   {showWords ? (
-                    <span className="shrink-0 rounded-full bg-white/85 px-3 py-0.5 text-base font-bold text-[#2F2A26] sm:text-lg">
+                    <span className="relative shrink-0 rounded-full border-2 border-white/70 bg-white/95 px-4 py-0.5 text-base font-bold text-[#2F2A26] shadow-[0_3px_0_rgba(47,42,38,0.12)] sm:text-lg">
                       {place.label}
                     </span>
                   ) : null}
@@ -230,7 +240,7 @@ export function HubWorld({
               vibrate();
               onPageChange(Math.max(0, page - 1));
             }}
-            className="grid h-14 w-14 place-items-center rounded-full border-4 border-white/80 bg-white/35 text-white shadow-lg transition-transform active:scale-90 disabled:opacity-25"
+            className="grid h-14 w-14 place-items-center rounded-full border-[5px] border-white/90 bg-[#7C5CC4] text-white shadow-[0_6px_0_rgba(47,42,38,0.15)] transition-transform active:translate-y-1 active:scale-90 active:shadow-none disabled:bg-white/30 disabled:opacity-45"
           >
             <svg viewBox="0 0 100 100" className="h-8 w-8" aria-hidden>
               <path
@@ -244,7 +254,7 @@ export function HubWorld({
             </svg>
           </button>
 
-          <div className="flex items-center gap-2 rounded-full bg-white/55 px-4 py-2 shadow">
+          <div className="flex items-center gap-2 rounded-full border-2 border-white/70 bg-white/70 px-4 py-2 shadow-[0_4px_0_rgba(47,42,38,0.1)] backdrop-blur-sm">
             {PLACE_PAGES.map((_, index) => (
               <span
                 key={index}
@@ -270,7 +280,7 @@ export function HubWorld({
               vibrate();
               onPageChange(Math.min(PLACE_PAGES.length - 1, page + 1));
             }}
-            className="grid h-14 w-14 place-items-center rounded-full border-4 border-white bg-[#F79420] text-white shadow-[0_6px_0_rgba(0,0,0,0.14)] transition-transform active:scale-90 disabled:opacity-25"
+            className="grid h-14 w-14 place-items-center rounded-full border-[5px] border-white bg-[#F79420] text-white shadow-[0_6px_0_rgba(47,42,38,0.16)] transition-transform active:translate-y-1 active:scale-90 active:shadow-none disabled:bg-white/30 disabled:opacity-45"
           >
             <svg viewBox="0 0 100 100" className="h-8 w-8" aria-hidden>
               <path
