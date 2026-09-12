@@ -300,6 +300,7 @@ export function BalloonGame({ onHome }: { onHome: () => void }) {
         prompt={
           <div className="flex items-center gap-2">
             <span
+              data-balloon-count={count}
               key={`${count}-${missed}`}
               className={`text-3xl font-bold tabular-nums sm:text-4xl ${
                 count === 0 && missed > 0
