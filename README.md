@@ -21,9 +21,11 @@ arrow opens a second page of games:
 | **Balloons**     | counting, with no upper limit     | Pop balloons drifting up from below the screen. The count keeps climbing and cheers every ten; letting one escape off the top starts it over. |
 | **Workshop**     | circle, square, triangle, star, heart | Tap a shape, tap its matching hole.                                  |
 | **Station**      | one, two, three, four             | Couple the wagons in order and travel through four rotating courses: meadow, coast, mountains, and moonlight. |
-| **Dress Pip**    | hat, shirt, shoes, red, blue, yellow | Hear a short clothing request, then tap the matching item to dress Pip. |
+| **Dress Pip**    | hat, shirt, shoes, raincoat, boots, crown, jacket and colours | Complete three rotating wardrobes—Playtime, Rainy Day and Party Time—using short spoken clothing requests. |
 | **Toy Cleanup**  | ball, car, blocks, blue, red, green | Pick the requested toy and put it in the matching coloured box. |
 | **Actions**      | jump, spin, wave, stomp            | Tap an action to hear its verb and make Pip perform it; match the pictured action for a celebration. |
+| **Frog Commands** | jump, run, walk, stop, clap, sit, stand, turn | Say the displayed verb to make the frog act and cross the lily-pad course; replay/check controls prevent recognition misses from blocking play. |
+| **Grow a Flower** | seed, water, sun, flower           | Say each word to plant and grow a flower through four visible stages. |
 | **Listen & find** | animals and colours              | The ear button starts a gentle three-round listening game in the farm or paint tent. |
 
 ### Design rules
@@ -44,8 +46,8 @@ arrow opens a second page of games:
   word takes to say. Interactive choices such as the fruit tray briefly lock
   until the complete “Orange … Yum” response and a short cooldown finish.
   Spoken parts have a 220 ms pause between them, so words never collide.
-  Fast-action play such as balloon popping stays responsive: the current
-  number finishes, then stale queued numbers collapse to the latest score.
+  Balloon numbers use their own fast ordered queue: every popped number
+  finishes, and the next starts immediately with no artificial pause.
 - **Speech uses an unlocked Web Audio context.** Bundled clips avoid both the
   unreliable `speechSynthesis` timing path and an iOS audio-session conflict
   that can stall the following pronunciation check.
@@ -61,12 +63,11 @@ Press **and hold** the gear in the top-right of the town for about a second —
 long enough that a child mashing the screen will not get in. You can mute the
 app, hide the written words and slow the voice down.
 
-After an animal is tapped, the listening display shows when it is the
-child's turn. Pronunciation checking is on by default and uses the browser's
-speech recognition service; only a tolerant match for the displayed animal
-awards a star. It can be disabled in grown-up settings. If recognition is
-unavailable or stalls, a large green tick lets a grown-up confirm the attempt
-manually instead of trapping the game.
+Farm repetition, Frog Commands and Grow a Flower use the browser's speech
+recognition service by default. A tolerant match completes the action. It can
+be disabled in grown-up settings; if recognition is unavailable or stalls, a
+large green tick lets a grown-up confirm the attempt manually instead of
+trapping the game.
 
 ## Run it locally
 
@@ -118,7 +119,7 @@ src/
   app/          layout, page, web app manifest
   components/
     art/        every character, animal, food and building as inline SVG
-    games/      the nine mini-games
+    games/      the eleven mini-games
     ui/         shared chrome: game frame, word bubble, confetti, settings
   lib/          audio engine, settings store, word lists, find-it challenge
 ```

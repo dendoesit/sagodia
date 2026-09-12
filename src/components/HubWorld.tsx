@@ -7,6 +7,8 @@ import {
   BalloonCartScene,
   BarnScene,
   DressUpScene,
+  FlowerGardenScene,
+  FrogPondScene,
   PaintTentScene,
   ShapeWorkshopScene,
   SnackCartScene,
@@ -31,6 +33,8 @@ const SCENES: Record<
   dress: DressUpScene,
   cleanup: ToyCleanupScene,
   actions: ActionPlaygroundScene,
+  frog: FrogPondScene,
+  flower: FlowerGardenScene,
 };
 
 const PLACE_PAGES = [PLACES.slice(0, 6), PLACES.slice(6)];

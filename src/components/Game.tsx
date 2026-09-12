@@ -8,6 +8,8 @@ import { BalloonGame } from "@/components/games/BalloonGame";
 import { CleanupGame } from "@/components/games/CleanupGame";
 import { DressGame } from "@/components/games/DressGame";
 import { FarmGame } from "@/components/games/FarmGame";
+import { FlowerGame } from "@/components/games/FlowerGame";
+import { FrogGame } from "@/components/games/FrogGame";
 import { KitchenGame } from "@/components/games/KitchenGame";
 import { PaintGame } from "@/components/games/PaintGame";
 import { ShapesGame } from "@/components/games/ShapesGame";
@@ -26,6 +28,8 @@ const GAMES: Record<PlaceId, React.ComponentType<{ onHome: () => void }>> = {
   dress: DressGame,
   cleanup: CleanupGame,
   actions: ActionGame,
+  frog: FrogGame,
+  flower: FlowerGame,
 };
 
 export function Game() {

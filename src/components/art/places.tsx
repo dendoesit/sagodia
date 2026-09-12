@@ -422,3 +422,45 @@ export function ActionPlaygroundScene(props: ArtProps) {
     </Art>
   );
 }
+
+export function FrogPondScene(props: ArtProps) {
+  return (
+    <Art {...props}>
+      <path d="M8 75 Q25 57 45 73 Q66 54 92 72 Q82 91 49 88 Q18 92 8 75 Z" fill="#4FC3D4" stroke={OUTLINE} strokeWidth={3} />
+      <ellipse cx={30} cy={74} rx={18} ry={8} fill="#63BE58" stroke={OUTLINE} strokeWidth={2.6} />
+      <ellipse cx={74} cy={69} rx={18} ry={8} fill="#5FAF4E" stroke={OUTLINE} strokeWidth={2.6} />
+      <ellipse cx={50} cy={49} rx={24} ry={21} fill="#63BE58" stroke={OUTLINE} strokeWidth={3} />
+      <circle cx={39} cy={31} r={10} fill="#63BE58" stroke={OUTLINE} strokeWidth={2.6} />
+      <circle cx={61} cy={31} r={10} fill="#63BE58" stroke={OUTLINE} strokeWidth={2.6} />
+      <circle cx={39} cy={31} r={4} fill={OUTLINE} />
+      <circle cx={61} cy={31} r={4} fill={OUTLINE} />
+      <path d="M39 54 Q50 64 61 54" fill="none" stroke={OUTLINE} strokeWidth={3} strokeLinecap="round" />
+      <path d="M18 29 L12 15 M82 29 L88 15" stroke="#FFD84D" strokeWidth={5} strokeLinecap="round" />
+    </Art>
+  );
+}
+
+export function FlowerGardenScene(props: ArtProps) {
+  return (
+    <Art {...props}>
+      <path d="M24 63 H76 L70 92 H30 Z" fill="#F79420" stroke={OUTLINE} strokeWidth={3.2} strokeLinejoin="round" />
+      <path d="M20 58 H80 V68 H20 Z" fill="#FFB25B" stroke={OUTLINE} strokeWidth={3.2} />
+      <path d="M50 59 Q50 38 50 26 M49 45 Q36 34 31 43 M51 39 Q66 29 70 40" fill="none" stroke="#4A9B45" strokeWidth={5} strokeLinecap="round" />
+      {[0, 60, 120, 180, 240, 300].map((angle) => (
+        <ellipse
+          key={angle}
+          cx={50}
+          cy={17}
+          rx={7}
+          ry={13}
+          fill="#FF8FB1"
+          stroke={OUTLINE}
+          strokeWidth={2}
+          transform={`rotate(${angle} 50 29)`}
+        />
+      ))}
+      <circle cx={50} cy={29} r={9} fill="#FFD84D" stroke={OUTLINE} strokeWidth={2.5} />
+      <path d="M12 42 Q18 31 24 42 Q18 51 12 42 Z M79 22 Q85 11 91 22 Q85 31 79 22 Z" fill="#4F8FE0" />
+    </Art>
+  );
+}

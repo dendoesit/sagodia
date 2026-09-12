@@ -58,6 +58,12 @@ DRESSING = [
     ("Hat", "Red"),
     ("Shirt", "Blue"),
     ("Shoes", "Yellow"),
+    ("Rain hat", "Yellow"),
+    ("Raincoat", "Green"),
+    ("Boots", "Red"),
+    ("Crown", "Purple"),
+    ("Jacket", "Pink"),
+    ("Party shoes", "Blue"),
 ]
 TOY_CLEANUP = [
     ("Ball", "Blue"),
@@ -65,6 +71,8 @@ TOY_CLEANUP = [
     ("Blocks", "Green"),
 ]
 ACTIONS = ["Jump", "Spin", "Wave", "Stomp"]
+FROG_COMMANDS = ["Jump", "Run", "Walk", "Stop", "Clap", "Sit", "Stand", "Turn"]
+FLOWER_STEPS = ["Seed", "Water", "Sun", "Flower"]
 NUMBERS = [
     "One",
     "Two",
@@ -125,6 +133,8 @@ def build_lines() -> list[str]:
         *(item for item, _ in DRESSING),
         *(toy for toy, _ in TOY_CLEANUP),
         *ACTIONS,
+        *FROG_COMMANDS,
+        *FLOWER_STEPS,
         *NUMBERS,
     }
 

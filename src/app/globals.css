@@ -328,6 +328,105 @@ button,
   animation: action-stomp 0.75s ease-out;
 }
 
+@keyframes frog-run {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  28% {
+    transform: translateX(18%) rotate(7deg) scaleX(0.92);
+  }
+  62% {
+    transform: translateX(-8%) rotate(-5deg) scaleX(1.08);
+  }
+}
+
+.anim-frog-run {
+  animation: frog-run 0.72s ease-in-out;
+}
+
+@keyframes frog-walk {
+  0%,
+  100% {
+    transform: rotate(0deg) translateY(0);
+  }
+  25% {
+    transform: rotate(-7deg) translateY(-5%);
+  }
+  70% {
+    transform: rotate(7deg) translateY(-3%);
+  }
+}
+
+.anim-frog-walk {
+  animation: frog-walk 0.85s ease-in-out;
+}
+
+@keyframes frog-stop {
+  0% {
+    transform: scale(1.08);
+  }
+  30% {
+    transform: scale(0.94);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.anim-frog-stop {
+  animation: frog-stop 0.5s ease-out;
+}
+
+@keyframes frog-clap {
+  0%,
+  100% {
+    transform: scaleX(1) rotate(0deg);
+  }
+  35% {
+    transform: scaleX(0.72) rotate(-4deg);
+  }
+  65% {
+    transform: scaleX(1.08) rotate(4deg);
+  }
+}
+
+.anim-frog-clap {
+  animation: frog-clap 0.65s ease-in-out;
+}
+
+@keyframes frog-sit {
+  0%,
+  100% {
+    transform: translateY(0) scaleY(1);
+  }
+  45%,
+  75% {
+    transform: translateY(13%) scaleY(0.76);
+  }
+}
+
+.anim-frog-sit {
+  transform-origin: center bottom;
+  animation: frog-sit 0.85s ease-in-out;
+}
+
+@keyframes frog-stand {
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+  45%,
+  75% {
+    transform: scaleY(1.22) translateY(-8%);
+  }
+}
+
+.anim-frog-stand {
+  transform-origin: center bottom;
+  animation: frog-stand 0.85s ease-in-out;
+}
+
 @keyframes listen-bar {
   0%,
   100% {
@@ -405,7 +504,13 @@ button,
   .anim-action-jump,
   .anim-action-spin,
   .anim-action-wave,
-  .anim-action-stomp {
+  .anim-action-stomp,
+  .anim-frog-run,
+  .anim-frog-walk,
+  .anim-frog-stop,
+  .anim-frog-clap,
+  .anim-frog-sit,
+  .anim-frog-stand {
     animation: none;
   }
 }
