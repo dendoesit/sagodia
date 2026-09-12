@@ -6,7 +6,7 @@ import {
   PipOutfit,
   type ClothingId,
 } from "@/components/art/activities";
-import { Pip } from "@/components/art/friends";
+import { Pip, Sparkle } from "@/components/art/friends";
 import { Celebration } from "@/components/ui/Celebration";
 import { PlaceFrame } from "@/components/ui/PlaceFrame";
 import { useWordBubble } from "@/components/ui/WordBubble";
@@ -25,24 +25,97 @@ type Clothing = {
   request: string;
 };
 
-const CLOTHES: Clothing[] = [
-  { id: "hat", word: "Hat", color: "Red", request: "Put on the red hat." },
+type Outfit = {
+  id: string;
+  label: string;
+  background: string;
+  floor: string;
+  bubbleTone: string;
+  pieces: Clothing[];
+};
+
+const OUTFITS: Outfit[] = [
   {
-    id: "shirt",
-    word: "Shirt",
-    color: "Blue",
-    request: "Put on the blue shirt.",
+    id: "playtime",
+    label: "Playtime",
+    background: "from-[#DCCEFF] via-[#B9A7F7] to-[#8C6DD1]",
+    floor: "#7658B5",
+    bubbleTone: "#6C4EB5",
+    pieces: [
+      { id: "hat", word: "Hat", color: "Red", request: "Put on the red hat." },
+      {
+        id: "shirt",
+        word: "Shirt",
+        color: "Blue",
+        request: "Put on the blue shirt.",
+      },
+      {
+        id: "shoes",
+        word: "Shoes",
+        color: "Yellow",
+        request: "Put on the yellow shoes.",
+      },
+    ],
   },
   {
-    id: "shoes",
-    word: "Shoes",
-    color: "Yellow",
-    request: "Put on the yellow shoes.",
+    id: "rainy-day",
+    label: "Rainy Day",
+    background: "from-[#D8F1FF] via-[#91CFE8] to-[#5C9FBD]",
+    floor: "#4F89A5",
+    bubbleTone: "#276A89",
+    pieces: [
+      {
+        id: "rain-hat",
+        word: "Rain hat",
+        color: "Yellow",
+        request: "Put on the yellow rain hat.",
+      },
+      {
+        id: "raincoat",
+        word: "Raincoat",
+        color: "Green",
+        request: "Put on the green raincoat.",
+      },
+      {
+        id: "boots",
+        word: "Boots",
+        color: "Red",
+        request: "Put on the red boots.",
+      },
+    ],
+  },
+  {
+    id: "party-time",
+    label: "Party Time",
+    background: "from-[#FFE0EE] via-[#FFB8D2] to-[#C879B4]",
+    floor: "#A85A96",
+    bubbleTone: "#9C3E7E",
+    pieces: [
+      {
+        id: "crown",
+        word: "Crown",
+        color: "Purple",
+        request: "Put on the purple crown.",
+      },
+      {
+        id: "jacket",
+        word: "Jacket",
+        color: "Pink",
+        request: "Put on the pink jacket.",
+      },
+      {
+        id: "party-shoes",
+        word: "Party shoes",
+        color: "Blue",
+        request: "Put on the blue party shoes.",
+      },
+    ],
   },
 ];
 
 export function DressGame({ onHome }: { onHome: () => void }) {
   const { bubble, showWord } = useWordBubble();
+  const [outfitIndex, setOutfitIndex] = useState(0);
   const [targetIndex, setTargetIndex] = useState(0);
   const [worn, setWorn] = useState<Partial<Record<ClothingId, boolean>>>({});
   const [wrong, setWrong] = useState<ClothingId | null>(null);
@@ -51,7 +124,8 @@ export function DressGame({ onHome }: { onHome: () => void }) {
   const [locked, setLocked] = useState(false);
   const timer = useRef<number | undefined>(undefined);
   const wrongTimer = useRef<number | undefined>(undefined);
-  const target = CLOTHES[targetIndex];
+  const outfit = OUTFITS[outfitIndex];
+  const target = outfit.pieces[targetIndex] ?? outfit.pieces[0];
 
   useEffect(
     () => () => {
@@ -81,7 +155,7 @@ export function DressGame({ onHome }: { onHome: () => void }) {
     }
 
     const nextWorn = { ...worn, [item.id]: true };
-    const complete = CLOTHES.every((piece) => nextWorn[piece.id]);
+    const complete = outfit.pieces.every((piece) => nextWorn[piece.id]);
     setWorn(nextWorn);
     setDressed((current) => current + 1);
     setLocked(true);
@@ -94,25 +168,49 @@ export function DressGame({ onHome }: { onHome: () => void }) {
       sfxFanfare();
       timer.current = window.setTimeout(() => {
         setWorn({});
-        setTargetIndex((current) => (current + 1) % CLOTHES.length);
+        setOutfitIndex((current) => (current + 1) % OUTFITS.length);
+        setTargetIndex(0);
         setLocked(false);
       }, 3000);
       return;
     }
 
     timer.current = window.setTimeout(() => {
-      const next = CLOTHES.findIndex((piece) => !nextWorn[piece.id]);
+      const next = outfit.pieces.findIndex((piece) => !nextWorn[piece.id]);
       setTargetIndex(next);
       setLocked(false);
     }, 850);
   };
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-linear-to-b from-[#DCCEFF] via-[#B9A7F7] to-[#8C6DD1]">
+    <div
+      data-dress-outfit={outfit.id}
+      className={`relative h-full w-full overflow-hidden bg-linear-to-b ${outfit.background}`}
+    >
       <div className="pointer-events-none absolute inset-0 opacity-35 [background:repeating-linear-gradient(90deg,transparent_0_42px,rgba(255,255,255,0.22)_42px_44px)]" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[23%] bg-[#7658B5]/45" />
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-[23%] opacity-45"
+        style={{ background: outfit.floor }}
+      />
       <div className="pointer-events-none absolute left-[8%] top-[18%] h-14 w-14 rounded-full bg-[#FFE066]/35 blur-xl" />
       <div className="pointer-events-none absolute right-[7%] top-[34%] h-20 w-20 rounded-full bg-white/25 blur-2xl" />
+      {outfit.id === "rainy-day" ? (
+        <div className="pointer-events-none absolute inset-0 opacity-35" aria-hidden>
+          {[12, 30, 50, 70, 88].map((left, index) => (
+            <span
+              key={left}
+              className="absolute h-7 w-1.5 -rotate-12 rounded-full bg-white"
+              style={{ left: `${left}%`, top: `${16 + (index % 3) * 21}%` }}
+            />
+          ))}
+        </div>
+      ) : null}
+      {outfit.id === "party-time" ? (
+        <>
+          <Sparkle className="pointer-events-none absolute left-[5%] top-[18%] h-16 w-16 opacity-35" />
+          <Sparkle className="pointer-events-none absolute right-[4%] top-[36%] h-20 w-20 opacity-25" fill="#FFD84D" />
+        </>
+      ) : null}
       <PlaceFrame
         onHome={onHome}
         onAsk={sayRequest}
@@ -125,7 +223,7 @@ export function DressGame({ onHome }: { onHome: () => void }) {
           </span>
         }
         bubble={bubble}
-        bubbleTone="#6C4EB5"
+        bubbleTone={outfit.bubbleTone}
       >
         <div className="flex min-h-0 flex-1 flex-col items-center gap-3 px-3 pb-3 landscape:flex-row landscape:justify-center landscape:gap-5">
           <button
@@ -139,13 +237,28 @@ export function DressGame({ onHome }: { onHome: () => void }) {
               dressed > 0 ? "anim-wiggle" : "anim-bob"
             }`}
           >
+            <span className="absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-full border border-white/60 bg-white/75 px-3 py-1 text-xs font-bold text-[#2F2A26]/70 shadow-sm backdrop-blur-sm">
+              <span>{outfit.label}</span>
+              <span className="flex gap-1" aria-hidden>
+                {OUTFITS.map((option, index) => (
+                  <span
+                    key={option.id}
+                    className={`h-1.5 w-1.5 rounded-full ${
+                      index === outfitIndex
+                        ? "bg-[#F79420]"
+                        : "bg-[#2F2A26]/20"
+                    }`}
+                  />
+                ))}
+              </span>
+            </span>
             <span className="pointer-events-none absolute inset-x-[18%] bottom-[3%] h-[10%] rounded-[50%] bg-[#4B347C]/20 blur-sm" />
             <Pip className="h-full w-full drop-shadow-xl" title="Pip" />
             <PipOutfit worn={worn} className="pointer-events-none absolute inset-0 h-full w-full" />
           </button>
 
           <div className="grid h-[28%] min-h-24 w-full max-w-2xl shrink-0 grid-cols-3 gap-2 rounded-[30px] border-4 border-white/35 bg-[#65469E]/20 p-2 shadow-[inset_0_4px_14px_rgba(72,48,123,0.15)] landscape:h-full landscape:w-[44%] landscape:grid-cols-1">
-            {CLOTHES.map((item) => (
+            {outfit.pieces.map((item) => (
               <button
                 key={item.id}
                 type="button"
